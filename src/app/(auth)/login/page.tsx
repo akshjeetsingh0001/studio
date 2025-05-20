@@ -1,3 +1,4 @@
+
 'use client';
 
 import type React from 'react';
@@ -21,6 +22,8 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    // Simulate a short delay for better UX
+    await new Promise(resolve => setTimeout(resolve, 300));
     const success = await login(username, password);
     if (!success) {
       toast({
@@ -29,56 +32,68 @@ export default function LoginPage() {
         variant: "destructive",
       });
     }
-    setIsLoading(false);
+    // Keep loading true until redirect or if login fails then set to false.
+    // The AuthContext handles redirect, so setIsLoading(false) here is mainly for the error case.
+    if (!success) {
+        setIsLoading(false);
+    }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-      <Card className="w-full max-w-sm shadow-xl">
-        <CardHeader className="items-center text-center">
-          <AppLogo iconSize={40} textSize="text-3xl" className="mb-4" />
-          <CardTitle className="text-2xl">Welcome Back!</CardTitle>
-          <CardDescription>Enter your credentials to access the POS system.</CardDescription>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-100 to-sky-100 dark:from-slate-900 dark:to-sky-800 p-4 transition-colors duration-300">
+      <Card className="w-full max-w-md shadow-2xl rounded-xl overflow-hidden animate-fadeIn">
+        <CardHeader className="items-center text-center p-8 bg-background/80 backdrop-blur-sm">
+          <AppLogo iconSize={48} textSize="text-4xl" className="mb-6" />
+          <CardTitle className="text-3xl font-bold">Welcome Back!</CardTitle>
+          <CardDescription className="mt-2 text-muted-foreground pb-2">
+            Enter your credentials to access your DineSwift dashboard.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username" className="text-base">Username</Label>
               <Input
                 id="username"
                 type="text"
-                placeholder="aksh"
+                placeholder="e.g., aksh"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 autoComplete="username"
+                className="h-12 text-base px-4 rounded-lg focus:ring-primary/50 focus:border-primary"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-base">Password</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="aksh"
+                placeholder="Your secure password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
+                className="h-12 text-base px-4 rounded-lg focus:ring-primary/50 focus:border-primary"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" size="lg" className="w-full h-14 text-lg font-semibold rounded-lg transition-transform hover:scale-105 active:scale-95" disabled={isLoading}>
               {isLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               ) : (
-                <LogIn className="mr-2 h-4 w-4" />
+                <LogIn className="mr-2 h-5 w-5" />
               )}
-              Login
+              Sign In
             </Button>
           </form>
         </CardContent>
-        <CardFooter className="flex-col text-center text-xs text-muted-foreground">
-          <p>Use username 'aksh' and password 'aksh' to login.</p>
-          <p className="mt-4">&copy; {new Date().getFullYear()} DineSwift POS. All rights reserved.</p>
+        <CardFooter className="flex-col text-center p-6 bg-muted/30">
+          <p className="text-xs text-muted-foreground/80">
+            For demo: use username <b className="text-foreground/90">aksh</b> and password <b className="text-foreground/90">aksh</b>.
+          </p>
+          <p className="mt-4 text-xs text-muted-foreground/70">
+            &copy; {new Date().getFullYear()} DineSwift POS. All rights reserved.
+          </p>
         </CardFooter>
       </Card>
     </div>
