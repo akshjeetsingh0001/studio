@@ -113,3 +113,20 @@ body {
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+@keyframes rgb-cycle {
+  0% { color: hsl(0, 100%, 50%); } /* Red */
+  16% { color: hsl(60, 100%, 50%); } /* Yellow */
+  33% { color: hsl(120, 100%, 50%); } /* Green */
+  50% { color: hsl(180, 100%, 50%); } /* Cyan */
+  66% { color: hsl(240, 100%, 50%); } /* Blue */
+  83% { color: hsl(300, 100%, 50%); } /* Magenta */
+  100% { color: hsl(360, 100%, 50%); } /* Red (to complete the cycle) */
+}
+
+.text-rgb-animate {
+  animation: rgb-cycle 8s linear infinite;
+  /* Fallback color in case animations are disabled or not supported */
+  /* This will use the default text color for the parent or page */
+  color: inherit; 
+}
