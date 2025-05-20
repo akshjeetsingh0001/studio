@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import { PlusCircle, MinusCircle, Trash2, ShoppingCart, Zap, Lightbulb, DollarSign, CreditCard, AlertTriangle } from 'lucide-react';
+import { PlusCircle, MinusCircle, Trash2, ShoppingCart, Zap, Lightbulb, DollarSign, CreditCard, AlertTriangle, FolderOpen } from 'lucide-react';
 import { getUpsellSuggestions, type GetUpsellSuggestionsInput } from '@/ai/flows/upsell-suggestions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -53,6 +53,7 @@ export default function OrderEntryPage() {
 
   const [currentOrder, setCurrentOrder] = useState<OrderItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
 
@@ -91,12 +92,19 @@ export default function OrderEntryPage() {
     return currentOrder.reduce((total, item) => total + item.price * item.quantity, 0);
   };
 
-  const filteredMenuItems = mockMenuItems.filter((item) =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const allCategories = ['All', ...Array.from(new Set(mockMenuItems.map(item => item.category)))];
 
-  const menuCategories = Array.from(new Set(mockMenuItems.map(item => item.category)));
+  const filteredMenuItems = mockMenuItems.filter((item) => {
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const categoriesToDisplay = selectedCategory === 'All'
+    ? Array.from(new Set(filteredMenuItems.map(item => item.category))).sort()
+    : [selectedCategory];
+
 
   const fetchAiSuggestions = useCallback(async () => {
     if (currentOrder.length === 0) {
@@ -179,7 +187,6 @@ export default function OrderEntryPage() {
         const existingSavedOrdersRaw = localStorage.getItem(USER_SAVED_ORDERS_KEY);
         let existingSavedOrders = existingSavedOrdersRaw ? JSON.parse(existingSavedOrdersRaw) : [];
         
-        // Check if order with this ID already exists (e.g. editing an existing order)
         const existingOrderIndex = existingSavedOrders.findIndex((order: any) => order.id === newOrderId);
         if (existingOrderIndex > -1) {
           existingSavedOrders[existingOrderIndex] = newOrderForStorage; // Update existing
@@ -237,7 +244,7 @@ export default function OrderEntryPage() {
       status: 'PendingPayment',
       server: authUser?.username || 'Staff',
       time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      orderDetails: currentOrder.map(item => ({ // Save detailed items
+      orderDetails: currentOrder.map(item => ({ 
         id: item.id,
         name: item.name,
         quantity: item.quantity,
@@ -278,7 +285,6 @@ export default function OrderEntryPage() {
     router.push('/orders');
   };
 
-   // Load order if editing
   useEffect(() => {
     if (pageParamId && pageParamId !== 'new' && typeof window !== 'undefined') {
       const savedOrdersRaw = localStorage.getItem(USER_SAVED_ORDERS_KEY);
@@ -288,8 +294,6 @@ export default function OrderEntryPage() {
         if (orderToEdit && orderToEdit.orderDetails) {
           setCurrentOrder(orderToEdit.orderDetails);
         } else if (orderToEdit) {
-           // If orderDetails is not present but order exists (e.g. old mock data),
-           // it will start as an empty order for that table/ID
            console.warn(`Order ${pageParamId} found but no detailed items. Starting fresh for this ID.`);
         }
       }
@@ -306,7 +310,7 @@ export default function OrderEntryPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]"> {/* Adjust height to fit within layout */}
+    <div className="flex flex-col h-[calc(100vh-4rem)]"> 
       <PageHeader title={pageTitle} description={pageDescription}>
          <Button variant="outline" size="sm" onClick={handleSaveOrder} disabled={currentOrder.length === 0}>
             <DollarSign className="mr-2 h-4 w-4" />
@@ -323,23 +327,39 @@ export default function OrderEntryPage() {
         <Card className="lg:col-span-2 flex flex-col shadow-lg">
           <CardHeader>
             <CardTitle>Menu</CardTitle>
+            <div className="flex flex-wrap gap-2 mt-2 mb-4">
+              {allCategories.map(category => (
+                <Button
+                  key={category}
+                  variant={selectedCategory === category ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedCategory(category)}
+                  className="text-xs px-3 py-1 h-auto"
+                >
+                  {category}
+                </Button>
+              ))}
+            </div>
             <Input
               type="search"
-              placeholder="Search menu items..."
+              placeholder={`Search in ${selectedCategory === 'All' ? 'all items' : selectedCategory}...`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="mt-2"
             />
           </CardHeader>
           <CardContent className="flex-1 overflow-hidden p-0">
             <ScrollArea className="h-full p-6 pt-0">
-              {menuCategories.map(category => {
+              {categoriesToDisplay.map(category => {
                 const itemsInCategory = filteredMenuItems.filter(item => item.category === category);
-                if (itemsInCategory.length === 0 && searchTerm) return null; 
+                // If searching or a specific category is selected, and it's empty, don't show the header if it's the only one.
+                if (itemsInCategory.length === 0 && (searchTerm || selectedCategory !== 'All')) return null; 
 
                 return (
                   <div key={category} className="mb-6">
                     <h3 className="text-xl font-semibold mb-4 pb-2 border-b sticky top-0 bg-card py-2 z-10">{category}</h3>
+                    {itemsInCategory.length === 0 && !searchTerm && (
+                       <p className="text-muted-foreground col-span-full">No items in this category.</p>
+                    )}
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                       {itemsInCategory.map((item) => (
                         <Card key={item.id} className="flex flex-col overflow-hidden hover:shadow-md transition-shadow">
@@ -358,15 +378,12 @@ export default function OrderEntryPage() {
                           </Button>
                         </Card>
                       ))}
-                      {itemsInCategory.length === 0 && !searchTerm && (
-                        <p className="text-muted-foreground col-span-full">No items in this category.</p>
-                      )}
                     </div>
                   </div>
                 );
               })}
-              {filteredMenuItems.length === 0 && searchTerm && (
-                <p className="text-center text-muted-foreground py-8">No menu items match your search.</p>
+              {filteredMenuItems.length === 0 && (searchTerm || selectedCategory !== 'All') && (
+                <p className="text-center text-muted-foreground py-8">No menu items match your criteria.</p>
               )}
             </ScrollArea>
           </CardContent>
@@ -473,3 +490,4 @@ export default function OrderEntryPage() {
     </div>
   );
 }
+
