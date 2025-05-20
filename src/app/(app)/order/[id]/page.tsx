@@ -7,7 +7,7 @@ from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
-import { Card, CardTitle, CardContent, CardDescription, CardHeader } from '@/components/ui/card'; // CardContent, CardDescription, CardHeader might not be used in item card but kept for other potential uses
+import { Card, CardTitle, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
@@ -403,8 +403,12 @@ export default function OrderEntryPage() {
                     )}
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                       {itemsInCategory.map((item) => (
-                        <Card key={item.id} className="flex flex-col overflow-hidden hover:shadow-md transition-shadow">
-                          <div className="relative w-full h-36"> {/* Increased image height */}
+                        <Card
+                          key={item.id}
+                          className="flex flex-col overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                          onClick={() => addItemToOrder(item)}
+                        >
+                          <div className="relative w-full h-36">
                             <Image 
                               src={item.imageUrl} 
                               alt={item.name} 
@@ -413,18 +417,11 @@ export default function OrderEntryPage() {
                               data-ai-hint={item['data-ai-hint'] || `${item.category.toLowerCase()} food`} 
                             />
                           </div>
-                          <div className="p-3 flex flex-col flex-grow"> {/* Main content area below image */}
-                            <div className="flex-grow mb-2"> {/* Section for name and price */}
+                          <div className="p-3 flex flex-col flex-grow">
+                            <div className="flex-grow mb-2">
                               <CardTitle className="text-base font-semibold mb-1">{item.name}</CardTitle>
                               <p className="text-sm font-bold text-primary">${item.price.toFixed(2)}</p>
                             </div>
-                            <Button 
-                              onClick={() => addItemToOrder(item)} 
-                              variant="outline" 
-                              className="w-full mt-auto border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                            >
-                              <PlusCircle className="mr-2 h-4 w-4" /> Add to Order
-                            </Button>
                           </div>
                         </Card>
                       ))}
@@ -542,8 +539,3 @@ export default function OrderEntryPage() {
     </div>
   );
 }
-
-
-    
-
-    
