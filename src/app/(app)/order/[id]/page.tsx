@@ -339,7 +339,7 @@ export default function OrderEntryPage() {
 
                 return (
                   <div key={category} className="mb-6">
-                    <h3 className="text-xl font-semibold mb-3 sticky top-0 bg-card py-2 z-10">{category}</h3>
+                    <h3 className="text-xl font-semibold mb-4 pb-2 border-b sticky top-0 bg-card py-2 z-10">{category}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                       {itemsInCategory.map((item) => (
                         <Card key={item.id} className="flex flex-col overflow-hidden hover:shadow-md transition-shadow">
@@ -473,4 +473,3 @@ export default function OrderEntryPage() {
     </div>
   );
 }
-
