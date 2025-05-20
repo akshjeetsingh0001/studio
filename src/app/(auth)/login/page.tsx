@@ -46,7 +46,7 @@ export default function LoginPage() {
           <AppLogo iconSize={48} textSize="text-4xl" className="mb-6" />
           <CardTitle className="text-3xl font-bold">Welcome Back!</CardTitle>
           <CardDescription className="mt-2 text-muted-foreground pb-2">
-            Enter your credentials to access your DineSwift dashboard.
+            Enter your credentials to access your Seera dashboard.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-8">
@@ -92,7 +92,7 @@ export default function LoginPage() {
             For demo: use username <b className="text-foreground/90">aksh</b> and password <b className="text-foreground/90">aksh</b>.
           </p>
           <p className="mt-4 text-xs text-muted-foreground/70">
-            &copy; {new Date().getFullYear()} DineSwift POS. All rights reserved.
+            &copy; {new Date().getFullYear()} Seera. All rights reserved.
           </p>
         </CardFooter>
       </Card>

@@ -1,3 +1,4 @@
+
 import { ChefHat } from 'lucide-react';
 import type React from 'react';
 
@@ -12,7 +13,7 @@ const AppLogo: React.FC<AppLogoProps> = ({ className, iconSize = 24, textSize = 
     <div className={`flex items-center gap-2 ${className}`}>
       <ChefHat size={iconSize} className="text-primary" />
       <h1 className={`font-bold ${textSize} text-foreground`}>
-        DineSwift <span className="text-primary">POS</span>
+        Seera
       </h1>
     </div>
   );

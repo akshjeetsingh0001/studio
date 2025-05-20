@@ -1,3 +1,4 @@
+
 import type { LucideIcon } from 'lucide-react';
 import { Home, ShoppingCart, LayoutGrid, UtensilsCrossed, BarChart3, Settings, LogOut, Users, Ticket } from 'lucide-react';
 
@@ -17,7 +18,7 @@ export interface NavItemGroup {
 }
 
 export const siteConfig = {
-  name: "DineSwift POS",
+  name: "Seera",
   description: "Modern Point of Sale system for restaurants.",
 };
 
