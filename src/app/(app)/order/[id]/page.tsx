@@ -15,6 +15,7 @@ import Image from 'next/image';
 import { PlusCircle, MinusCircle, Trash2, ShoppingCart, Zap, Lightbulb, DollarSign, CreditCard, AlertTriangle } from 'lucide-react';
 import { getUpsellSuggestions, type GetUpsellSuggestionsInput } from '@/ai/flows/upsell-suggestions';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Mock menu items (can be fetched from a service/API later)
 const mockMenuItems = [
@@ -41,19 +42,22 @@ interface OrderItem extends MenuItem {
   quantity: number;
 }
 
+const USER_SAVED_ORDERS_KEY = 'dineSwiftUserSavedOrders';
+
 export default function OrderEntryPage() {
   const params = useParams();
   const router = useRouter();
-  const id = params?.id as string | undefined;
+  const pageParamId = params?.id as string | undefined; // Renamed to avoid conflict with item.id
   const { toast } = useToast();
+  const { user: authUser } = useAuth();
 
   const [currentOrder, setCurrentOrder] = useState<OrderItem[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
 
-  const pageTitle = id === 'new' ? 'New Order' : `Order for ${id?.toUpperCase()}`;
-  const pageDescription = id === 'new' ? 'Start a new customer order.' : `Manage order for Table/ID: ${id?.toUpperCase()}`;
+  const pageTitle = pageParamId === 'new' ? 'New Order' : `Order for ${pageParamId?.toUpperCase()}`;
+  const pageDescription = pageParamId === 'new' ? 'Start a new customer order.' : `Manage order for Table/ID: ${pageParamId?.toUpperCase()}`;
 
   const addItemToOrder = (item: MenuItem) => {
     setCurrentOrder((prevOrder) => {
@@ -134,6 +138,8 @@ export default function OrderEntryPage() {
   }, [currentOrder, fetchAiSuggestions]);
 
   const handleSaveOrder = () => {
+    if (!pageParamId) return; // Should not happen if page loads correctly
+
     if (currentOrder.length === 0) {
       toast({
         title: "Empty Order",
@@ -144,29 +150,56 @@ export default function OrderEntryPage() {
       return;
     }
 
-    const orderIdToSave = id === 'new' ? `MOCKORD-${Date.now().toString().slice(-6)}` : id;
-    const orderData = {
-      orderId: orderIdToSave,
-      items: currentOrder,
+    const newOrderId = `MOCKORD-${Date.now().toString().slice(-6)}`;
+    const orderTableId = pageParamId === 'new' ? 'Counter' : pageParamId.toUpperCase();
+
+    const newOrderForStorage = {
+      id: newOrderId,
+      table: orderTableId,
+      items: currentOrder.reduce((sum, item) => sum + item.quantity, 0),
       total: calculateTotal(),
-      timestamp: new Date().toISOString(),
-      status: id === 'new' ? 'NewUnsaved' : 'UpdatedUnsaved', // Simulated status
+      status: 'Active',
+      server: authUser?.username || 'Staff',
+      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
     };
 
-    console.log("Order Saved (Simulated):", orderData);
-    toast({
-      title: "Order Saved!",
-      description: `Order ${orderIdToSave} has been saved. (Simulated - check console)`,
-    });
+    // Save to localStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const existingSavedOrdersRaw = localStorage.getItem(USER_SAVED_ORDERS_KEY);
+        const existingSavedOrders = existingSavedOrdersRaw ? JSON.parse(existingSavedOrdersRaw) : [];
+        localStorage.setItem(USER_SAVED_ORDERS_KEY, JSON.stringify([...existingSavedOrders, newOrderForStorage]));
+        
+        toast({
+          title: "Order Saved!",
+          description: `Order ${newOrderId} for ${orderTableId} has been saved.`,
+        });
 
-    if (id === 'new') {
-      setCurrentOrder([]);
-      setAiSuggestions([]);
-      // router.push('/orders'); // Optional: navigate after saving a new order
+        setCurrentOrder([]);
+        setAiSuggestions([]);
+        router.push('/orders'); // Navigate to orders page to see the new order
+
+      } catch (e) {
+        console.error("Failed to save order to localStorage", e);
+        toast({
+          title: "Storage Error",
+          description: "Could not save order due to a storage issue.",
+          variant: "destructive",
+        });
+      }
+    } else {
+       // Fallback for environments where localStorage is not available (should not happen in 'use client')
+       console.log("Order Saved (Simulated - localStorage not available):", newOrderForStorage);
+       toast({
+         title: "Order Saved (Simulated)",
+         description: `Order ${newOrderId} for ${orderTableId} has been saved to console.`,
+       });
     }
   };
 
   const handleProceedToPayment = () => {
+    if (!pageParamId) return;
+
     if (currentOrder.length === 0) {
       toast({
         title: "Empty Order",
@@ -177,32 +210,46 @@ export default function OrderEntryPage() {
       return;
     }
     
-    const orderIdToPay = id === 'new' ? `MOCKORD-${Date.now().toString().slice(-6)}` : id;
-     const orderData = {
-      orderId: orderIdToPay,
-      items: currentOrder,
+    // Similar to save, but could eventually redirect to a payment page
+    // For now, let's also save it and clear, then indicate payment processing
+    const newOrderId = `MOCKORD-PAY-${Date.now().toString().slice(-6)}`;
+    const orderTableId = pageParamId === 'new' ? 'Counter' : pageParamId.toUpperCase();
+    const paymentOrderData = {
+      id: newOrderId,
+      table: orderTableId,
+      items: currentOrder.reduce((sum, item) => sum + item.quantity, 0),
       total: calculateTotal(),
-      timestamp: new Date().toISOString(),
-      status: 'PendingPayment', // Simulated status
+      status: 'PendingPayment', // Status for payment processing
+      server: authUser?.username || 'Staff',
+      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
     };
+    
+    if (typeof window !== 'undefined') {
+      try {
+        const existingSavedOrdersRaw = localStorage.getItem(USER_SAVED_ORDERS_KEY);
+        const existingSavedOrders = existingSavedOrdersRaw ? JSON.parse(existingSavedOrdersRaw) : [];
+        // We might want to update status if already saved, or just add as a new "payment pending" entry
+        // For simplicity now, let's add it. It can be reconciled later.
+        localStorage.setItem(USER_SAVED_ORDERS_KEY, JSON.stringify([...existingSavedOrders, paymentOrderData]));
+      } catch (e) {
+        console.error("Failed to save order for payment to localStorage", e);
+      }
+    }
 
-    console.log("Proceeding to Payment (Simulated):", orderData);
+    console.log("Proceeding to Payment (Simulated):", paymentOrderData);
     toast({
       title: "Proceeding to Payment",
-      description: `Taking order ${orderIdToPay} to payment. (Simulated - check console)`,
+      description: `Order ${paymentOrderData.id} for ${orderTableId} is being processed for payment. (Simulated)`,
     });
 
-    // In a real app, you'd navigate to a payment screen.
-    // For now, if it's a new order, we can clear it.
-    if (id === 'new') {
-      setCurrentOrder([]);
-      setAiSuggestions([]);
-      // router.push(`/payment/${orderIdToPay}`); // Optional: navigate to a payment page
-    }
+    setCurrentOrder([]);
+    setAiSuggestions([]);
+    // router.push(`/payment/${paymentOrderData.id}`); // Optional: navigate to a dedicated payment page
+    router.push('/orders'); // Or back to orders list
   };
 
 
-  if (!id) {
+  if (!pageParamId) {
     return (
       <div className="flex h-full items-center justify-center">
         <p>Loading order details...</p>
@@ -213,7 +260,7 @@ export default function OrderEntryPage() {
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]"> {/* Adjust height to fit within layout */}
       <PageHeader title={pageTitle} description={pageDescription}>
-         <Button variant="outline" size="sm" onClick={handleSaveOrder} disabled={currentOrder.length === 0 && id === 'new'}>
+         <Button variant="outline" size="sm" onClick={handleSaveOrder} disabled={currentOrder.length === 0}>
             <DollarSign className="mr-2 h-4 w-4" />
             Save Order
           </Button>
