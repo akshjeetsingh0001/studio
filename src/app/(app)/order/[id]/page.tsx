@@ -133,8 +133,7 @@ export default function OrderEntryPage() {
   const availableMenuItems = menuItems.filter(item => item.availability);
 
   const filteredMenuItems = availableMenuItems.filter((item) => {
-    const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
-    return matchesCategory;
+    return selectedCategory === 'All' || item.category === selectedCategory;
   });
 
   const categoriesToDisplay = selectedCategory === 'All'
@@ -402,7 +401,7 @@ export default function OrderEntryPage() {
                           className="flex flex-col overflow-hidden hover:shadow-md transition-shadow transition-transform duration-150 ease-in-out hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                           onClick={() => addItemToOrder(item)}
                         >
-                          <div className="relative w-full h-40">
+                          <div className="relative w-full h-32">
                             <Image 
                               src={item.imageUrl} 
                               alt={item.name} 
@@ -411,7 +410,7 @@ export default function OrderEntryPage() {
                               data-ai-hint={item['data-ai-hint'] || `${item.category.toLowerCase()} food`} 
                             />
                           </div>
-                          <div className="p-3 flex flex-col flex-grow">
+                          <div className="p-2 flex flex-col flex-grow">
                             <div className="flex-grow mb-1">
                               <CardTitle className="text-base font-semibold mb-0.5">{item.name}</CardTitle>
                               <p className="text-sm font-bold text-primary">${item.price.toFixed(2)}</p>
