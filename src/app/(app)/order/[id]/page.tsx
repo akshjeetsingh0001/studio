@@ -38,7 +38,7 @@ interface MenuItem {
   description: string;
 }
 
-interface OrderItem extends MenuItem {
+export interface OrderItem extends MenuItem { // Exporting OrderItem for use in OrdersPage
   quantity: number;
 }
 
@@ -138,7 +138,7 @@ export default function OrderEntryPage() {
   }, [currentOrder, fetchAiSuggestions]);
 
   const handleSaveOrder = () => {
-    if (!pageParamId) return; // Should not happen if page loads correctly
+    if (!pageParamId) return; 
 
     if (currentOrder.length === 0) {
       toast({
@@ -150,8 +150,10 @@ export default function OrderEntryPage() {
       return;
     }
 
-    const newOrderId = `MOCKORD-${Date.now().toString().slice(-6)}`;
-    const orderTableId = pageParamId === 'new' ? 'Counter' : pageParamId.toUpperCase();
+    const newOrderId = pageParamId === 'new' || !pageParamId.startsWith('ORD') 
+      ? `ORD-${Date.now().toString().slice(-6)}`
+      : pageParamId.toUpperCase();
+    const orderTableId = pageParamId === 'new' ? 'Counter' : (pageParamId.startsWith('ORD') ? 'Takeout' : pageParamId.toUpperCase());
 
     const newOrderForStorage = {
       id: newOrderId,
@@ -161,23 +163,42 @@ export default function OrderEntryPage() {
       status: 'Active',
       server: authUser?.username || 'Staff',
       time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      orderDetails: currentOrder.map(item => ({ // Save detailed items
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        category: item.category,
+        imageUrl: item.imageUrl,
+        description: item.description,
+      })),
     };
 
-    // Save to localStorage
     if (typeof window !== 'undefined') {
       try {
         const existingSavedOrdersRaw = localStorage.getItem(USER_SAVED_ORDERS_KEY);
-        const existingSavedOrders = existingSavedOrdersRaw ? JSON.parse(existingSavedOrdersRaw) : [];
-        localStorage.setItem(USER_SAVED_ORDERS_KEY, JSON.stringify([...existingSavedOrders, newOrderForStorage]));
+        let existingSavedOrders = existingSavedOrdersRaw ? JSON.parse(existingSavedOrdersRaw) : [];
+        
+        // Check if order with this ID already exists (e.g. editing an existing order)
+        const existingOrderIndex = existingSavedOrders.findIndex((order: any) => order.id === newOrderId);
+        if (existingOrderIndex > -1) {
+          existingSavedOrders[existingOrderIndex] = newOrderForStorage; // Update existing
+        } else {
+          existingSavedOrders.push(newOrderForStorage); // Add new
+        }
+        
+        localStorage.setItem(USER_SAVED_ORDERS_KEY, JSON.stringify(existingSavedOrders));
         
         toast({
           title: "Order Saved!",
           description: `Order ${newOrderId} for ${orderTableId} has been saved.`,
         });
 
-        setCurrentOrder([]);
-        setAiSuggestions([]);
-        router.push('/orders'); // Navigate to orders page to see the new order
+        if (pageParamId === 'new') { // Only clear order if it was a truly new order
+          setCurrentOrder([]);
+          setAiSuggestions([]);
+        }
+        router.push('/orders'); 
 
       } catch (e) {
         console.error("Failed to save order to localStorage", e);
@@ -187,13 +208,6 @@ export default function OrderEntryPage() {
           variant: "destructive",
         });
       }
-    } else {
-       // Fallback for environments where localStorage is not available (should not happen in 'use client')
-       console.log("Order Saved (Simulated - localStorage not available):", newOrderForStorage);
-       toast({
-         title: "Order Saved (Simulated)",
-         description: `Order ${newOrderId} for ${orderTableId} has been saved to console.`,
-       });
     }
   };
 
@@ -210,27 +224,42 @@ export default function OrderEntryPage() {
       return;
     }
     
-    // Similar to save, but could eventually redirect to a payment page
-    // For now, let's also save it and clear, then indicate payment processing
-    const newOrderId = `MOCKORD-PAY-${Date.now().toString().slice(-6)}`;
-    const orderTableId = pageParamId === 'new' ? 'Counter' : pageParamId.toUpperCase();
+    const paymentOrderId = pageParamId === 'new' || !pageParamId.startsWith('ORD') 
+      ? `ORD-PAY-${Date.now().toString().slice(-6)}` 
+      : pageParamId.toUpperCase();
+    const orderTableId = pageParamId === 'new' ? 'Counter' : (pageParamId.startsWith('ORD') ? 'Takeout' : pageParamId.toUpperCase());
+    
     const paymentOrderData = {
-      id: newOrderId,
+      id: paymentOrderId,
       table: orderTableId,
       items: currentOrder.reduce((sum, item) => sum + item.quantity, 0),
       total: calculateTotal(),
-      status: 'PendingPayment', // Status for payment processing
+      status: 'PendingPayment',
       server: authUser?.username || 'Staff',
       time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      orderDetails: currentOrder.map(item => ({ // Save detailed items
+        id: item.id,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        category: item.category,
+        imageUrl: item.imageUrl,
+        description: item.description,
+      })),
     };
     
     if (typeof window !== 'undefined') {
       try {
         const existingSavedOrdersRaw = localStorage.getItem(USER_SAVED_ORDERS_KEY);
-        const existingSavedOrders = existingSavedOrdersRaw ? JSON.parse(existingSavedOrdersRaw) : [];
-        // We might want to update status if already saved, or just add as a new "payment pending" entry
-        // For simplicity now, let's add it. It can be reconciled later.
-        localStorage.setItem(USER_SAVED_ORDERS_KEY, JSON.stringify([...existingSavedOrders, paymentOrderData]));
+        let existingSavedOrders = existingSavedOrdersRaw ? JSON.parse(existingSavedOrdersRaw) : [];
+
+        const existingOrderIndex = existingSavedOrders.findIndex((order: any) => order.id === paymentOrderId);
+        if (existingOrderIndex > -1) {
+          existingSavedOrders[existingOrderIndex] = paymentOrderData;
+        } else {
+          existingSavedOrders.push(paymentOrderData);
+        }
+        localStorage.setItem(USER_SAVED_ORDERS_KEY, JSON.stringify(existingSavedOrders));
       } catch (e) {
         console.error("Failed to save order for payment to localStorage", e);
       }
@@ -239,14 +268,33 @@ export default function OrderEntryPage() {
     console.log("Proceeding to Payment (Simulated):", paymentOrderData);
     toast({
       title: "Proceeding to Payment",
-      description: `Order ${paymentOrderData.id} for ${orderTableId} is being processed for payment. (Simulated)`,
+      description: `Order ${paymentOrderData.id} for ${orderTableId} is being processed for payment.`,
     });
 
-    setCurrentOrder([]);
-    setAiSuggestions([]);
-    // router.push(`/payment/${paymentOrderData.id}`); // Optional: navigate to a dedicated payment page
-    router.push('/orders'); // Or back to orders list
+    if (pageParamId === 'new') {
+      setCurrentOrder([]);
+      setAiSuggestions([]);
+    }
+    router.push('/orders');
   };
+
+   // Load order if editing
+  useEffect(() => {
+    if (pageParamId && pageParamId !== 'new' && typeof window !== 'undefined') {
+      const savedOrdersRaw = localStorage.getItem(USER_SAVED_ORDERS_KEY);
+      if (savedOrdersRaw) {
+        const savedOrders = JSON.parse(savedOrdersRaw);
+        const orderToEdit = savedOrders.find((order: any) => order.id.toLowerCase() === pageParamId.toLowerCase() || order.table.toLowerCase() === pageParamId.toLowerCase());
+        if (orderToEdit && orderToEdit.orderDetails) {
+          setCurrentOrder(orderToEdit.orderDetails);
+        } else if (orderToEdit) {
+           // If orderDetails is not present but order exists (e.g. old mock data),
+           // it will start as an empty order for that table/ID
+           console.warn(`Order ${pageParamId} found but no detailed items. Starting fresh for this ID.`);
+        }
+      }
+    }
+  }, [pageParamId]);
 
 
   if (!pageParamId) {
