@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import type React from 'react';
@@ -385,7 +386,9 @@ export default function OrderEntryPage() {
 
                 return (
                   <div key={category} className="mb-6">
-                    <h3 className="text-xl font-semibold mb-4 pb-2 border-b border-border sticky top-0 bg-card py-2 z-10">{category}</h3>
+                     { selectedCategory === 'All' && (
+                        <h3 className="text-xl font-semibold mb-4 pb-2 border-b border-border sticky top-0 bg-card py-2 z-10">{category}</h3>
+                     )}
                     {itemsInCategory.length === 0 && selectedCategory !== 'All' && (
                        <p className="text-muted-foreground col-span-full">No available items in this category.</p>
                     )}
@@ -396,7 +399,7 @@ export default function OrderEntryPage() {
                       {itemsInCategory.map((item) => (
                         <Card
                           key={item.id}
-                          className="flex flex-col overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                          className="flex flex-col overflow-hidden hover:shadow-md transition-shadow transition-transform duration-150 ease-in-out hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                           onClick={() => addItemToOrder(item)}
                         >
                           <div className="relative w-full h-40">
@@ -530,3 +533,4 @@ export default function OrderEntryPage() {
     </div>
   );
 }
+
