@@ -2,16 +2,17 @@
 'use client';
 
 import type React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Eye, Filter, PlusCircle, Printer, Search } from 'lucide-react';
+import { Eye, PlusCircle, Printer, Search, CheckCircle2, Trash2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 
 // Initial mock data for orders
 const initialMockOrders = [
@@ -52,55 +53,112 @@ const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destr
   }
 };
 
+// Helper to parse time string (e.g., "10:30 AM") into minutes from midnight for sorting
+const parseTime = (timeStr: string): number => {
+  const [time, modifier] = timeStr.split(' ');
+  if (!time || !modifier) return 0; // Fallback for invalid format
+  let [hours, minutes] = time.split(':').map(Number);
+  if (isNaN(hours) || isNaN(minutes)) return 0; // Fallback for invalid time parts
+
+  if (modifier.toUpperCase() === 'PM' && hours < 12) hours += 12;
+  if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0; // Midnight case (12 AM is 0 hours)
+  return hours * 60 + minutes;
+};
+
 export default function OrdersPage() {
-  const [allOrders, setAllOrders] = useState<MockOrder[]>(initialMockOrders);
+  const [allOrders, setAllOrders] = useState<MockOrder[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const { toast } = useToast();
+
+  const updateLocalStorage = (updatedOrders: MockOrder[]) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(USER_SAVED_ORDERS_KEY, JSON.stringify(updatedOrders));
+    }
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
         const savedOrdersRaw = localStorage.getItem(USER_SAVED_ORDERS_KEY);
+        let loadedOrders = [...initialMockOrders]; // Start with a fresh copy of initial mocks
+
         if (savedOrdersRaw) {
           const savedOrders: MockOrder[] = JSON.parse(savedOrdersRaw);
-          // Combine initial mocks with saved orders, prioritizing saved ones if IDs clash or just appending.
-          // For simplicity, let's ensure saved orders are added without complex merging for now.
-          // A more robust approach would involve checking for duplicates by ID.
-          const combinedOrders = [...initialMockOrders];
-          const mockOrderIds = new Set(initialMockOrders.map(o => o.id));
+          const initialOrderIds = new Set(initialMockOrders.map(o => o.id));
           
+          // Create a map of initial orders for quick lookup and update
+          const ordersMap = new Map<string, MockOrder>();
+          initialMockOrders.forEach(order => ordersMap.set(order.id, order));
+
           savedOrders.forEach(savedOrder => {
-            if (!mockOrderIds.has(savedOrder.id)) { // Add if ID is not in initial mocks
-              combinedOrders.push(savedOrder);
-            } else { // If ID exists, update it (simple replacement)
-              const index = combinedOrders.findIndex(o => o.id === savedOrder.id);
-              if (index !== -1) {
-                combinedOrders[index] = savedOrder;
-              }
-            }
+            ordersMap.set(savedOrder.id, savedOrder); // Overwrite or add saved order
           });
-          setAllOrders(combinedOrders);
+          loadedOrders = Array.from(ordersMap.values());
         }
+        setAllOrders(loadedOrders);
       } catch (e) {
         console.error("Failed to load orders from localStorage", e);
-        // Fallback to initial mock orders if localStorage is corrupted
-        setAllOrders(initialMockOrders);
+        setAllOrders([...initialMockOrders]); // Fallback to initial mock orders
       }
     }
   }, []);
 
-  const activeOrders = allOrders.filter(order => ['Active', 'Preparing', 'PendingPayment'].includes(order.status));
-  const completedOrders = allOrders.filter(order => ['Paid', 'Completed', 'Cancelled'].includes(order.status));
-  const [searchTerm, setSearchTerm] = useState('');
 
-
-  const filterOrders = (orders: MockOrder[]) => {
-    if (!searchTerm) return orders;
-    return orders.filter(order => 
-      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.table.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.server.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.status.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  const handleMarkAsPaid = (orderId: string) => {
+    setAllOrders(prevOrders => {
+      const updatedOrders = prevOrders.map(order =>
+        order.id === orderId ? { ...order, status: 'Paid' } : order
+      );
+      updateLocalStorage(updatedOrders);
+      toast({
+        title: "Order Updated",
+        description: `Order ${orderId} marked as Paid.`,
+        icon: <CheckCircle2 className="h-4 w-4" />,
+      });
+      return updatedOrders;
+    });
   };
+
+  const handleDeleteOrder = (orderId: string) => {
+    setAllOrders(prevOrders => {
+      const updatedOrders = prevOrders.filter(order => order.id !== orderId);
+      updateLocalStorage(updatedOrders);
+      toast({
+        title: "Order Deleted",
+        description: `Order ${orderId} has been removed.`,
+        variant: "destructive",
+        icon: <Trash2 className="h-4 w-4" />,
+      });
+      return updatedOrders;
+    });
+  };
+
+  const filterAndSortOrders = (orders: MockOrder[], filterTerm: string, sortActive: boolean = false) => {
+    let filtered = orders;
+    if (filterTerm) {
+      filtered = orders.filter(order => 
+        order.id.toLowerCase().includes(filterTerm.toLowerCase()) ||
+        order.table.toLowerCase().includes(filterTerm.toLowerCase()) ||
+        order.server.toLowerCase().includes(filterTerm.toLowerCase()) ||
+        order.status.toLowerCase().includes(filterTerm.toLowerCase())
+      );
+    }
+    if (sortActive) {
+      return filtered.sort((a, b) => parseTime(b.time) - parseTime(a.time));
+    }
+    return filtered;
+  };
+  
+  const activeOrders = filterAndSortOrders(
+    allOrders.filter(order => ['Active', 'Preparing', 'PendingPayment'].includes(order.status)),
+    searchTerm,
+    true // Enable sorting for active orders
+  );
+  
+  const completedOrders = filterAndSortOrders(
+    allOrders.filter(order => ['Paid', 'Completed', 'Cancelled'].includes(order.status)),
+    searchTerm
+  );
 
 
   return (
@@ -117,9 +175,6 @@ export default function OrdersPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          {/* <Button variant="outline"> // Filter button can be re-added if complex filtering is needed
-            <Filter className="mr-2 h-4 w-4" /> Filter 
-          </Button> */}
           <Link href="/order/new" passHref>
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" /> New Order
@@ -130,17 +185,22 @@ export default function OrdersPage() {
 
       <Tabs defaultValue="active">
         <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
-          <TabsTrigger value="active">Active Orders ({filterOrders(activeOrders).length})</TabsTrigger>
-          <TabsTrigger value="completed">Completed/Past Orders ({filterOrders(completedOrders).length})</TabsTrigger>
+          <TabsTrigger value="active">Active Orders ({activeOrders.length})</TabsTrigger>
+          <TabsTrigger value="completed">Completed/Past Orders ({completedOrders.length})</TabsTrigger>
         </TabsList>
         <TabsContent value="active">
           <Card className="shadow-sm">
             <CardHeader>
               <CardTitle>Active Orders</CardTitle>
-              <CardDescription>Orders currently in progress, being prepared, or pending payment.</CardDescription>
+              <CardDescription>Orders currently in progress, being prepared, or pending payment. Sorted by newest first.</CardDescription>
             </CardHeader>
             <CardContent>
-              <OrderTable orders={filterOrders(activeOrders)} />
+              <OrderTable 
+                orders={activeOrders} 
+                onMarkAsPaid={handleMarkAsPaid}
+                onDeleteOrder={handleDeleteOrder}
+                showActions={true}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -151,7 +211,12 @@ export default function OrdersPage() {
               <CardDescription>Orders that have been paid, completed, or cancelled.</CardDescription>
             </CardHeader>
             <CardContent>
-              <OrderTable orders={filterOrders(completedOrders)} />
+              <OrderTable 
+                orders={completedOrders} 
+                onMarkAsPaid={() => {}} // No "mark as paid" for completed orders
+                onDeleteOrder={handleDeleteOrder} // Optionally allow delete for completed orders too
+                showActions={false} // Or limited actions
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -160,7 +225,14 @@ export default function OrdersPage() {
   );
 }
 
-function OrderTable({ orders }: { orders: MockOrder[] }) {
+interface OrderTableProps {
+  orders: MockOrder[];
+  onMarkAsPaid: (orderId: string) => void;
+  onDeleteOrder: (orderId: string) => void;
+  showActions: boolean;
+}
+
+function OrderTable({ orders, onMarkAsPaid, onDeleteOrder, showActions }: OrderTableProps) {
   if (orders.length === 0) {
     return <p className="text-center text-muted-foreground py-8">No orders to display in this category.</p>;
   }
@@ -190,19 +262,22 @@ function OrderTable({ orders }: { orders: MockOrder[] }) {
             </TableCell>
             <TableCell>{order.server}</TableCell>
             <TableCell>{order.time}</TableCell>
-            <TableCell className="text-right">
-              <Link href={`/order/${order.status === 'PendingPayment' ? 'new' : order.id.toLowerCase()}`} passHref> 
-                {/* If PendingPayment, link to /order/new or a specific payment page might be better. For now, let's simplify.
-                    Or we can pass the order id as a query param to a payment page.
-                    For current structure, viewing it might try to load based on ORDxxx which page.tsx doesn't handle for loading items.
-                    Linking to `/order/new` for PendingPayment might be confusing.
-                    Let's assume for now, 'View Order' is always appropriate or leads to a page that can handle it.
-                    Given the order entry page can take an ID, it should just be the order.id.
-                */}
+            <TableCell className="text-right space-x-1">
+              <Link href={`/order/${order.id.toLowerCase()}`} passHref>
                 <Button variant="ghost" size="icon" title="View Order">
                   <Eye className="h-4 w-4" />
                 </Button>
               </Link>
+              {showActions && ['Active', 'Preparing', 'PendingPayment'].includes(order.status) && (
+                <Button variant="ghost" size="icon" title="Mark as Paid" onClick={() => onMarkAsPaid(order.id)}>
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                </Button>
+              )}
+              {showActions && ( // Enable delete for active orders for now
+                 <Button variant="ghost" size="icon" title="Delete Order" onClick={() => onDeleteOrder(order.id)} className="text-destructive hover:text-destructive/80">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
               {['Paid', 'Completed'].includes(order.status) && (
                 <Button variant="ghost" size="icon" title="Print Receipt">
                   <Printer className="h-4 w-4" />
