@@ -3,7 +3,7 @@
 
 import type React from 'react';
 import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import { PlusCircle, MinusCircle, Trash2, ShoppingCart, Zap, Lightbulb, DollarSign, CreditCard } from 'lucide-react';
+import { PlusCircle, MinusCircle, Trash2, ShoppingCart, Zap, Lightbulb, DollarSign, CreditCard, AlertTriangle } from 'lucide-react';
 import { getUpsellSuggestions, type GetUpsellSuggestionsInput } from '@/ai/flows/upsell-suggestions';
 import { useToast } from '@/hooks/use-toast';
 
@@ -43,6 +43,7 @@ interface OrderItem extends MenuItem {
 
 export default function OrderEntryPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params?.id as string | undefined;
   const { toast } = useToast();
 
@@ -111,7 +112,7 @@ export default function OrderEntryPage() {
       console.error('Failed to fetch AI suggestions:', error);
       toast({
         title: 'AI Suggestion Error',
-        description: 'Could not fetch upsell suggestions at this time.',
+        description: 'Could not fetch upsell suggestions. API key might be missing or invalid.',
         variant: 'destructive',
       });
       setAiSuggestions([]);
@@ -132,6 +133,75 @@ export default function OrderEntryPage() {
     return () => clearTimeout(debounceTimer);
   }, [currentOrder, fetchAiSuggestions]);
 
+  const handleSaveOrder = () => {
+    if (currentOrder.length === 0) {
+      toast({
+        title: "Empty Order",
+        description: "Cannot save an empty order. Please add items.",
+        variant: "destructive",
+        icon: <AlertTriangle className="h-4 w-4" />,
+      });
+      return;
+    }
+
+    const orderIdToSave = id === 'new' ? `MOCKORD-${Date.now().toString().slice(-6)}` : id;
+    const orderData = {
+      orderId: orderIdToSave,
+      items: currentOrder,
+      total: calculateTotal(),
+      timestamp: new Date().toISOString(),
+      status: id === 'new' ? 'NewUnsaved' : 'UpdatedUnsaved', // Simulated status
+    };
+
+    console.log("Order Saved (Simulated):", orderData);
+    toast({
+      title: "Order Saved!",
+      description: `Order ${orderIdToSave} has been saved. (Simulated - check console)`,
+    });
+
+    if (id === 'new') {
+      setCurrentOrder([]);
+      setAiSuggestions([]);
+      // router.push('/orders'); // Optional: navigate after saving a new order
+    }
+  };
+
+  const handleProceedToPayment = () => {
+    if (currentOrder.length === 0) {
+      toast({
+        title: "Empty Order",
+        description: "No items in the order to proceed to payment.",
+        variant: "destructive",
+        icon: <AlertTriangle className="h-4 w-4" />,
+      });
+      return;
+    }
+    
+    const orderIdToPay = id === 'new' ? `MOCKORD-${Date.now().toString().slice(-6)}` : id;
+     const orderData = {
+      orderId: orderIdToPay,
+      items: currentOrder,
+      total: calculateTotal(),
+      timestamp: new Date().toISOString(),
+      status: 'PendingPayment', // Simulated status
+    };
+
+    console.log("Proceeding to Payment (Simulated):", orderData);
+    toast({
+      title: "Proceeding to Payment",
+      description: `Taking order ${orderIdToPay} to payment. (Simulated - check console)`,
+    });
+
+    // In a real app, you'd navigate to a payment screen.
+    // For now, if it's a new order, we can clear it.
+    if (id === 'new') {
+      setCurrentOrder([]);
+      setAiSuggestions([]);
+      // router.push(`/payment/${orderIdToPay}`); // Optional: navigate to a payment page
+    }
+  };
+
+
   if (!id) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -143,11 +213,11 @@ export default function OrderEntryPage() {
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]"> {/* Adjust height to fit within layout */}
       <PageHeader title={pageTitle} description={pageDescription}>
-         <Button variant="outline" size="sm">
+         <Button variant="outline" size="sm" onClick={handleSaveOrder} disabled={currentOrder.length === 0 && id === 'new'}>
             <DollarSign className="mr-2 h-4 w-4" />
             Save Order
           </Button>
-          <Button size="sm">
+          <Button size="sm" onClick={handleProceedToPayment} disabled={currentOrder.length === 0}>
             <CreditCard className="mr-2 h-4 w-4" />
             Proceed to Payment
           </Button>
@@ -170,11 +240,11 @@ export default function OrderEntryPage() {
             <ScrollArea className="h-full p-6 pt-0">
               {menuCategories.map(category => {
                 const itemsInCategory = filteredMenuItems.filter(item => item.category === category);
-                if (itemsInCategory.length === 0 && searchTerm) return null; // Hide category if no items match search
+                if (itemsInCategory.length === 0 && searchTerm) return null; 
 
                 return (
                   <div key={category} className="mb-6">
-                    <h3 className="text-xl font-semibold mb-3 sticky top-0 bg-card py-2">{category}</h3>
+                    <h3 className="text-xl font-semibold mb-3 sticky top-0 bg-card py-2 z-10">{category}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                       {itemsInCategory.map((item) => (
                         <Card key={item.id} className="flex flex-col overflow-hidden hover:shadow-md transition-shadow">
@@ -209,7 +279,7 @@ export default function OrderEntryPage() {
 
         {/* Column 2: Current Order & AI Suggestions */}
         <div className="flex flex-col gap-6 overflow-hidden">
-          <Card className="flex-1 flex flex-col shadow-lg max-h-[60%]"> {/* Max height for order card */}
+          <Card className="flex-1 flex flex-col shadow-lg max-h-[60%]"> 
             <CardHeader>
               <CardTitle className="flex items-center">
                 <ShoppingCart className="mr-2 h-5 w-5 text-primary" />
@@ -260,7 +330,7 @@ export default function OrderEntryPage() {
             )}
           </Card>
 
-          <Card className="flex-1 flex flex-col shadow-lg min-h-[35%]"> {/* Min height for AI card */}
+          <Card className="flex-1 flex flex-col shadow-lg min-h-[35%]"> 
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Lightbulb className="mr-2 h-5 w-5 text-accent" />
@@ -285,7 +355,6 @@ export default function OrderEntryPage() {
                         variant="outline" 
                         className="w-full justify-start text-left h-auto py-2 hover:border-accent hover:text-accent"
                         onClick={() => {
-                          // Find if suggestion matches a menu item (simple match by name)
                           const suggestedItem = mockMenuItems.find(mi => suggestion.toLowerCase().includes(mi.name.toLowerCase()));
                           if (suggestedItem) {
                             addItemToOrder(suggestedItem);
