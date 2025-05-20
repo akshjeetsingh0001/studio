@@ -61,7 +61,7 @@ export default function OrderEntryPage() {
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
 
   const pageTitle = pageParamId === 'new' ? 'New Order' : `Order for ${pageParamId?.toUpperCase()}`;
-  const pageDescription = pageParamId === 'new' ? 'Start a new customer order.' : `Manage order for Table/ID: ${pageParamId?.toUpperCase()}`;
+  const pageDescription = pageParamId === 'new' ? '' : `Manage order for Table/ID: ${pageParamId?.toUpperCase()}`;
 
   const loadMenuItemsFromStorage = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -360,7 +360,7 @@ export default function OrderEntryPage() {
             Proceed to Payment
           </Button>
       </PageHeader>
-
+      
       <div className="flex flex-wrap gap-2 mb-4">
         {allCategories.map(category => (
           <Button
@@ -377,9 +377,6 @@ export default function OrderEntryPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
         <Card className="lg:col-span-2 flex flex-col shadow-lg">
-          <CardHeader>
-            <CardTitle>Menu</CardTitle>
-          </CardHeader>
           <CardContent className="flex-1 overflow-hidden p-0">
             <ScrollArea className="h-full p-6 pt-0">
               {categoriesToDisplay.map(category => {
@@ -533,7 +530,3 @@ export default function OrderEntryPage() {
     </div>
   );
 }
-
-    
-
-    
