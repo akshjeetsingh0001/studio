@@ -6,5 +6,11 @@ export default function AuthenticatedAppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <AppLayout>{children}</AppLayout>;
+  return (
+    <AppLayout>
+      <div className="animate-fadeIn">
+        {children}
+      </div>
+    </AppLayout>
+  );
 }
