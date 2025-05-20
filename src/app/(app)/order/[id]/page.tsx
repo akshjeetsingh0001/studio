@@ -361,24 +361,24 @@ export default function OrderEntryPage() {
           </Button>
       </PageHeader>
 
+      <div className="flex flex-wrap gap-2 mb-4">
+        {allCategories.map(category => (
+          <Button
+            key={category}
+            variant={selectedCategory === category ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedCategory(category)}
+            className="text-xs px-3 py-1 h-auto"
+          >
+            {category}
+          </Button>
+        ))}
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
         <Card className="lg:col-span-2 flex flex-col shadow-lg">
           <CardHeader>
             <CardTitle>Menu</CardTitle>
-            <div className="flex flex-wrap gap-2 mt-2 mb-4">
-              {allCategories.map(category => (
-                <Button
-                  key={category}
-                  variant={selectedCategory === category ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedCategory(category)}
-                  className="text-xs px-3 py-1 h-auto"
-                >
-                  {category}
-                </Button>
-              ))}
-            </div>
-            {/* Search Input Removed */}
           </CardHeader>
           <CardContent className="flex-1 overflow-hidden p-0">
             <ScrollArea className="h-full p-6 pt-0">
@@ -533,5 +533,7 @@ export default function OrderEntryPage() {
     </div>
   );
 }
+
+    
 
     
