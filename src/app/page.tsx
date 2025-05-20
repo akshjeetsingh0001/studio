@@ -10,7 +10,7 @@ export default function HomePage() {
   const { isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading) {  
       if (isAuthenticated) {
         router.replace('/dashboard');
       } else {
