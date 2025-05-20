@@ -1,3 +1,4 @@
+
 "use client"
 
 // Inspired by react-hot-toast library
@@ -16,6 +17,7 @@ type ToasterToast = ToastProps & {
   title?: React.ReactNode
   description?: React.ReactNode
   action?: ToastActionElement
+  icon?: React.ReactNode; // Added to allow icons in toasts
 }
 
 const actionTypes = {
@@ -175,14 +177,16 @@ function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {
-    listeners.push(setState)
+    // Capture the current setState function to ensure the correct one is removed.
+    const currentSetState = setState;
+    listeners.push(currentSetState)
     return () => {
-      const index = listeners.indexOf(setState)
+      const index = listeners.indexOf(currentSetState)
       if (index > -1) {
         listeners.splice(index, 1)
       }
     }
-  }, [state])
+  }, []) // Changed dependency array from [state] to []
 
   return {
     ...state,
