@@ -62,6 +62,20 @@ export default function MenuManagementPage() {
     }
   };
 
+  const handleAddCategory = () => {
+    toast({
+      title: "Add Category",
+      description: "This feature is coming soon! You'll be able to add new categories here.",
+    });
+  };
+
+  const handleAddModifierGroup = () => {
+    toast({
+      title: "Add Modifier Group",
+      description: "This feature is coming soon! You'll be able to add new modifier groups here.",
+    });
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader title="Menu Management" description="Add, edit, and organize your menu items, categories, and modifiers.">
@@ -145,7 +159,9 @@ export default function MenuManagementPage() {
                 <CardTitle>Categories</CardTitle>
                 <CardDescription>Organize your menu items into categories.</CardDescription>
               </div>
-              <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" /> Add Category</Button>
+              <Button variant="outline" onClick={handleAddCategory}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Category
+              </Button>
             </CardHeader>
             <CardContent>
               <Table>
@@ -184,7 +200,9 @@ export default function MenuManagementPage() {
                 <CardTitle>Modifiers</CardTitle>
                 <CardDescription>Manage item add-ons and customization options.</CardDescription>
               </div>
-               <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" /> Add Modifier Group</Button>
+               <Button variant="outline" onClick={handleAddModifierGroup}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add Modifier Group
+              </Button>
             </CardHeader>
             <CardContent>
               <Table>
@@ -221,3 +239,4 @@ export default function MenuManagementPage() {
     </div>
   );
 }
+
