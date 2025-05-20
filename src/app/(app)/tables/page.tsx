@@ -1,10 +1,14 @@
+
+'use client'; // Make this a client component to use hooks
+
 import type React from 'react';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Clock, Edit, Merge, PlusCircle, Users, XCircle } from 'lucide-react';
+import { CheckCircle, Clock, Edit, Merge, PlusCircle, Users, XCircle, ThumbsUp } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast'; // Import useToast
 
 // Mock data for tables
 const tableSections = [
@@ -54,6 +58,19 @@ const getStatusProps = (status: string) => {
 };
 
 export default function TableManagementPage() {
+  const { toast } = useToast(); // Initialize toast
+
+  const handleMarkAsCleaned = (tableName: string) => {
+    // In a real app, this would update the table status in the backend.
+    // For now, we just show a toast.
+    toast({
+      title: 'Table Status Updated',
+      description: `${tableName} has been marked as cleaned.`,
+      icon: <ThumbsUp className="h-5 w-5 text-green-500" />,
+    });
+    console.log(`${tableName} marked as cleaned.`);
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader title="Table Management" description="Oversee and manage all tables in your restaurant.">
@@ -116,7 +133,11 @@ export default function TableManagementPage() {
                       </Link>
                     )}
                      {table.status === 'Needs Cleaning' && (
-                       <Button variant="outline" className="w-full border-yellow-500 text-yellow-500 hover:bg-yellow-500/10">
+                       <Button 
+                         variant="outline" 
+                         className="w-full border-yellow-500 text-yellow-500 hover:bg-yellow-500/10"
+                         onClick={() => handleMarkAsCleaned(table.name)}
+                       >
                           Mark as Cleaned
                         </Button>
                     )}
