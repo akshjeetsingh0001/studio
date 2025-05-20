@@ -397,18 +397,18 @@ export default function OrderEntryPage() {
 
                 return (
                   <div key={category} className="mb-6">
-                    <h3 className="text-xl font-semibold mb-4 pb-2 border-b sticky top-0 bg-card py-2 z-10">{category}</h3>
+                    <h3 className="text-xl font-semibold mb-4 pb-2 border-b border-border sticky top-0 bg-card py-2 z-10">{category}</h3>
                     {itemsInCategory.length === 0 && !searchTerm && (
                        <p className="text-muted-foreground col-span-full">No available items in this category.</p>
                     )}
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
                       {itemsInCategory.map((item) => (
                         <Card
                           key={item.id}
                           className="flex flex-col overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
                           onClick={() => addItemToOrder(item)}
                         >
-                          <div className="relative w-full h-36">
+                          <div className="relative w-full h-40">
                             <Image 
                               src={item.imageUrl} 
                               alt={item.name} 
@@ -418,8 +418,8 @@ export default function OrderEntryPage() {
                             />
                           </div>
                           <div className="p-3 flex flex-col flex-grow">
-                            <div className="flex-grow mb-2">
-                              <CardTitle className="text-base font-semibold mb-1">{item.name}</CardTitle>
+                            <div className="flex-grow mb-1">
+                              <CardTitle className="text-base font-semibold mb-0.5">{item.name}</CardTitle>
                               <p className="text-sm font-bold text-primary">${item.price.toFixed(2)}</p>
                             </div>
                           </div>
@@ -440,7 +440,7 @@ export default function OrderEntryPage() {
         </Card>
 
         <div className="flex flex-col gap-6 overflow-hidden">
-          <Card className="flex-1 flex flex-col shadow-lg max-h-[60%]"> 
+          <Card className="flex-1 flex flex-col shadow-lg max-h-[65%]"> 
             <CardHeader>
               <CardTitle className="flex items-center">
                 <ShoppingCart className="mr-2 h-5 w-5 text-primary" />
@@ -491,7 +491,7 @@ export default function OrderEntryPage() {
             )}
           </Card>
 
-          <Card className="flex-1 flex flex-col shadow-lg min-h-[35%]"> 
+          <Card className="flex-1 flex flex-col shadow-lg min-h-[30%]"> 
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Lightbulb className="mr-2 h-5 w-5 text-accent" />
