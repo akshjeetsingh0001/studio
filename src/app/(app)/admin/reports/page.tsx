@@ -1,3 +1,4 @@
+
 'use client'; // Required for Recharts and date picker interactions
 
 import type React from 'react';
@@ -12,7 +13,7 @@ import { addDays, format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { ChartContainer, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
 import type { ChartConfig } from "@/components/ui/chart";
 
 // Mock data for reports
@@ -181,3 +182,4 @@ export default function ReportsPage() {
     </div>
   );
 }
+
