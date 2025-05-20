@@ -9,7 +9,6 @@ import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardTitle, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
@@ -57,7 +56,6 @@ export default function OrderEntryPage() {
 
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [currentOrder, setCurrentOrder] = useState<OrderItem[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
@@ -134,10 +132,8 @@ export default function OrderEntryPage() {
   const availableMenuItems = menuItems.filter(item => item.availability);
 
   const filteredMenuItems = availableMenuItems.filter((item) => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.category.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    return matchesCategory;
   });
 
   const categoriesToDisplay = selectedCategory === 'All'
@@ -382,24 +378,22 @@ export default function OrderEntryPage() {
                 </Button>
               ))}
             </div>
-            <Input
-              type="search"
-              placeholder={`Search in ${selectedCategory === 'All' ? 'all available items' : selectedCategory}...`}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+            {/* Search Input Removed */}
           </CardHeader>
           <CardContent className="flex-1 overflow-hidden p-0">
             <ScrollArea className="h-full p-6 pt-0">
               {categoriesToDisplay.map(category => {
                 const itemsInCategory = filteredMenuItems.filter(item => item.category === category);
-                if (itemsInCategory.length === 0 && (searchTerm || selectedCategory !== 'All')) return null; 
+                if (itemsInCategory.length === 0 && selectedCategory !== 'All') return null; 
 
                 return (
                   <div key={category} className="mb-6">
                     <h3 className="text-xl font-semibold mb-4 pb-2 border-b border-border sticky top-0 bg-card py-2 z-10">{category}</h3>
-                    {itemsInCategory.length === 0 && !searchTerm && (
+                    {itemsInCategory.length === 0 && selectedCategory !== 'All' && (
                        <p className="text-muted-foreground col-span-full">No available items in this category.</p>
+                    )}
+                     {itemsInCategory.length === 0 && selectedCategory === 'All' && availableMenuItems.length > 0 && (
+                       <p className="text-muted-foreground col-span-full">No items in category &quot;{category}&quot;. Check other categories or &quot;All&quot;.</p>
                     )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
                       {itemsInCategory.map((item) => (
@@ -429,10 +423,10 @@ export default function OrderEntryPage() {
                   </div>
                 );
               })}
-              {filteredMenuItems.length === 0 && (searchTerm || selectedCategory !== 'All') && (
+              {filteredMenuItems.length === 0 && selectedCategory !== 'All' && (
                 <p className="text-center text-muted-foreground py-8">No available menu items match your criteria.</p>
               )}
-               {availableMenuItems.length === 0 && !searchTerm && selectedCategory === 'All' && (
+               {availableMenuItems.length === 0 && selectedCategory === 'All' && (
                  <p className="text-center text-muted-foreground py-8">No items available in the menu. Please add items via Menu Management.</p>
               )}
             </ScrollArea>
@@ -539,3 +533,5 @@ export default function OrderEntryPage() {
     </div>
   );
 }
+
+    
