@@ -1,19 +1,24 @@
+
+'use client';
+
 import type React from 'react';
+import { useState } from 'react';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Edit, PlusCircle, Search, Trash2, Image as ImageIcon, ToggleLeft, ToggleRight, Utensils } from 'lucide-react';
+import { Edit, PlusCircle, Search, Trash2, Image as ImageIcon, ToggleLeft, ToggleRight, Utensils, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 
-// Mock data for menu items
-const mockMenuItems = [
+// Initial Mock data for menu items
+const initialMockMenuItems = [
   { id: 'ITEM001', name: 'Classic Burger', category: 'Main Course', price: 12.99, availability: true, imageUrl: 'https://placehold.co/100x100.png', description: 'A juicy beef patty with lettuce, tomato, and our special sauce.' },
   { id: 'ITEM002', name: 'Caesar Salad', category: 'Appetizers', price: 8.50, availability: true, imageUrl: 'https://placehold.co/100x100.png', description: 'Crisp romaine lettuce, croutons, Parmesan cheese, and Caesar dressing.' },
   { id: 'ITEM003', name: 'Margherita Pizza', category: 'Main Course', price: 15.00, availability: true, imageUrl: 'https://placehold.co/100x100.png', description: 'Classic pizza with tomato, mozzarella, and basil.' },
@@ -38,6 +43,25 @@ const mockModifiers = [
 
 
 export default function MenuManagementPage() {
+  const [menuItems, setMenuItems] = useState(initialMockMenuItems);
+  const { toast } = useToast();
+
+  const handleToggleAvailability = (itemId: string, currentAvailability: boolean) => {
+    setMenuItems(prevItems =>
+      prevItems.map(item =>
+        item.id === itemId ? { ...item, availability: !item.availability } : item
+      )
+    );
+    const changedItem = menuItems.find(item => item.id === itemId);
+    if (changedItem) {
+      toast({
+        title: `Availability Updated`,
+        description: `${changedItem.name} is now ${!currentAvailability ? 'available' : 'unavailable'}.`,
+        icon: !currentAvailability ? <CheckCircle className="h-5 w-5 text-green-500" /> : <XCircle className="h-5 w-5 text-red-500" />,
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader title="Menu Management" description="Add, edit, and organize your menu items, categories, and modifiers.">
@@ -80,7 +104,7 @@ export default function MenuManagementPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {mockMenuItems.map((item) => (
+                  {menuItems.map((item) => (
                     <TableRow key={item.id} className="hover:bg-muted/50">
                       <TableCell>
                         <div className="relative h-12 w-12 rounded-md overflow-hidden border">
@@ -91,7 +115,12 @@ export default function MenuManagementPage() {
                       <TableCell>{item.category}</TableCell>
                       <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
                       <TableCell className="text-center">
-                        <Switch checked={item.availability} id={`avail-${item.id}`} aria-label={`${item.name} availability`} />
+                        <Switch
+                          checked={item.availability}
+                          onCheckedChange={() => handleToggleAvailability(item.id, item.availability)}
+                          id={`avail-${item.id}`}
+                          aria-label={`${item.name} availability`}
+                        />
                       </TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="icon" title="Edit Item">
