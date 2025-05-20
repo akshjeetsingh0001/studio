@@ -2,23 +2,40 @@
 'use client';
 
 import type React from 'react';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Edit, PlusCircle, Search, Trash2, Image as ImageIcon, ToggleLeft, ToggleRight, Utensils, CheckCircle, XCircle } from 'lucide-react';
+import { Edit, PlusCircle, Search, Trash2, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 
-// Initial Mock data for menu items
-const initialMockMenuItems = [
+interface MenuItem {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  availability: boolean;
+  imageUrl: string;
+  description: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  itemCount: number;
+}
+
+const USER_MENU_ITEMS_KEY = 'dineSwiftMenuItems';
+
+// Initial Mock data for menu items - will be used if localStorage is empty
+const initialMockMenuItems: MenuItem[] = [
   { id: 'ITEM001', name: 'Classic Burger', category: 'Main Course', price: 12.99, availability: true, imageUrl: 'https://placehold.co/100x100.png', description: 'A juicy beef patty with lettuce, tomato, and our special sauce.' },
   { id: 'ITEM002', name: 'Caesar Salad', category: 'Appetizers', price: 8.50, availability: true, imageUrl: 'https://placehold.co/100x100.png', description: 'Crisp romaine lettuce, croutons, Parmesan cheese, and Caesar dressing.' },
   { id: 'ITEM003', name: 'Margherita Pizza', category: 'Main Course', price: 15.00, availability: true, imageUrl: 'https://placehold.co/100x100.png', description: 'Classic pizza with tomato, mozzarella, and basil.' },
@@ -27,38 +44,108 @@ const initialMockMenuItems = [
   { id: 'ITEM006', name: 'Chocolate Lava Cake', category: 'Desserts', price: 7.00, availability: true, imageUrl: 'https://placehold.co/100x100.png', description: 'Warm chocolate cake with a gooey molten center.' },
 ];
 
-const mockCategories = [
-  { id: 'CAT01', name: 'Appetizers', itemCount: 1 },
-  { id: 'CAT02', name: 'Main Course', itemCount: 2 },
-  { id: 'CAT03', name: 'Sides', itemCount: 1 },
-  { id: 'CAT04', name: 'Drinks', itemCount: 1 },
-  { id: 'CAT05', name: 'Desserts', itemCount: 1 },
-];
-
 const mockModifiers = [
   { id: 'MOD01', name: 'Cheese Options', items: ['Cheddar', 'Swiss', 'Pepper Jack'] },
   { id: 'MOD02', name: 'Burger Doneness', items: ['Rare', 'Medium Rare', 'Medium', 'Well Done'] },
   { id: 'MOD03', name: 'Salad Dressing', items: ['Ranch', 'Italian', 'Vinaigrette'] },
 ];
 
-
 export default function MenuManagementPage() {
-  const [menuItems, setMenuItems] = useState(initialMockMenuItems);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
-  const handleToggleAvailability = (itemId: string, currentAvailability: boolean) => {
-    setMenuItems(prevItems =>
-      prevItems.map(item =>
-        item.id === itemId ? { ...item, availability: !item.availability } : item
-      )
-    );
-    const changedItem = menuItems.find(item => item.id === itemId);
-    if (changedItem) {
+  const updateLocalStorage = (updatedItems: MenuItem[]) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(USER_MENU_ITEMS_KEY, JSON.stringify(updatedItems));
+    }
+  };
+  
+  const loadMenuItems = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedItemsRaw = localStorage.getItem(USER_MENU_ITEMS_KEY);
+        if (savedItemsRaw) {
+          setMenuItems(JSON.parse(savedItemsRaw));
+        } else {
+          // If nothing in localStorage, use initial mocks and save them
+          setMenuItems(initialMockMenuItems);
+          updateLocalStorage(initialMockMenuItems);
+        }
+      } catch (e) {
+        console.error("Failed to load menu items from localStorage", e);
+        setMenuItems(initialMockMenuItems); // Fallback
+      }
+    } else {
+        setMenuItems(initialMockMenuItems); // Fallback for SSR or non-browser
+    }
+  }, []);
+
+  useEffect(() => {
+    loadMenuItems();
+  }, [loadMenuItems]);
+
+  useEffect(() => {
+    // Derive categories from menuItems
+    const categoryMap = new Map<string, number>();
+    menuItems.forEach(item => {
+      categoryMap.set(item.category, (categoryMap.get(item.category) || 0) + 1);
+    });
+    const derivedCategories: Category[] = Array.from(categoryMap.entries()).map(([name, count], index) => ({
+      id: `CAT${index + 1}`,
+      name,
+      itemCount: count,
+    }));
+    setCategories(derivedCategories);
+  }, [menuItems]);
+
+
+  const handleToggleAvailability = (itemId: string) => {
+    let changedItemName = '';
+    let newAvailability = false;
+    
+    setMenuItems(prevItems => {
+      const updatedItems = prevItems.map(item => {
+        if (item.id === itemId) {
+          newAvailability = !item.availability;
+          changedItemName = item.name;
+          return { ...item, availability: newAvailability };
+        }
+        return item;
+      });
+      updateLocalStorage(updatedItems);
+      return updatedItems;
+    });
+    
+    if (changedItemName) {
       toast({
         title: `Availability Updated`,
-        description: `${changedItem.name} is now ${!currentAvailability ? 'available' : 'unavailable'}.`,
-        icon: !currentAvailability ? <CheckCircle className="h-5 w-5 text-green-500" /> : <XCircle className="h-5 w-5 text-red-500" />,
+        description: `${changedItemName} is now ${newAvailability ? 'available' : 'unavailable'}.`,
+        icon: newAvailability ? <CheckCircle className="h-5 w-5 text-green-500" /> : <XCircle className="h-5 w-5 text-red-500" />,
       });
+    }
+  };
+
+  const handleDeleteItem = (itemId: string) => {
+    let deletedItemName = '';
+    setMenuItems(prevItems => {
+        const itemToDelete = prevItems.find(item => item.id === itemId);
+        if (itemToDelete) {
+            deletedItemName = itemToDelete.name;
+        }
+        const updatedItems = prevItems.filter(item => item.id !== itemId);
+        updateLocalStorage(updatedItems);
+        return updatedItems;
+    });
+
+    if (deletedItemName) {
+        toast({
+            title: "Item Deleted",
+            description: `${deletedItemName} has been removed from the menu.`,
+            variant: "destructive",
+            icon: <Trash2 className="h-5 w-5" />,
+        });
     }
   };
 
@@ -75,6 +162,11 @@ export default function MenuManagementPage() {
       description: "This feature is coming soon! You'll be able to add new modifier groups here.",
     });
   };
+  
+  const filteredMenuItems = menuItems.filter(item => 
+    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.category.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="space-y-6">
@@ -82,7 +174,13 @@ export default function MenuManagementPage() {
         <div className="flex items-center gap-2">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input type="search" placeholder="Search items..." className="pl-8 sm:w-[300px]" />
+            <Input 
+              type="search" 
+              placeholder="Search items..." 
+              className="pl-8 sm:w-[300px]" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
           <Link href="/admin/menu/new-item" passHref>
             <Button>
@@ -94,9 +192,9 @@ export default function MenuManagementPage() {
 
       <Tabs defaultValue="items">
         <TabsList className="grid w-full grid-cols-3 md:w-[500px]">
-          <TabsTrigger value="items">All Items</TabsTrigger>
-          <TabsTrigger value="categories">Categories</TabsTrigger>
-          <TabsTrigger value="modifiers">Modifiers</TabsTrigger>
+          <TabsTrigger value="items">All Items ({filteredMenuItems.length})</TabsTrigger>
+          <TabsTrigger value="categories">Categories ({categories.length})</TabsTrigger>
+          <TabsTrigger value="modifiers">Modifiers ({mockModifiers.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="items">
@@ -118,11 +216,16 @@ export default function MenuManagementPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {menuItems.map((item) => (
+                  {filteredMenuItems.map((item) => (
                     <TableRow key={item.id} className="hover:bg-muted/50">
                       <TableCell>
                         <div className="relative h-12 w-12 rounded-md overflow-hidden border">
-                           <Image src={item.imageUrl} alt={item.name} layout="fill" objectFit="cover" data-ai-hint={`${item.category.toLowerCase()} food`} />
+                           <Image 
+                            src={item.imageUrl || `https://placehold.co/100x100.png?text=${item.name.substring(0,2)}`} 
+                            alt={item.name} 
+                            layout="fill" 
+                            objectFit="cover" 
+                            data-ai-hint={`${item.category.toLowerCase()} food`} />
                         </div>
                       </TableCell>
                       <TableCell className="font-medium">{item.name}</TableCell>
@@ -131,16 +234,16 @@ export default function MenuManagementPage() {
                       <TableCell className="text-center">
                         <Switch
                           checked={item.availability}
-                          onCheckedChange={() => handleToggleAvailability(item.id, item.availability)}
+                          onCheckedChange={() => handleToggleAvailability(item.id)}
                           id={`avail-${item.id}`}
                           aria-label={`${item.name} availability`}
                         />
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" title="Edit Item">
+                        <Button variant="ghost" size="icon" title="Edit Item" disabled> {/* Edit to be implemented */}
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" title="Delete Item" className="text-destructive hover:text-destructive/80">
+                        <Button variant="ghost" size="icon" title="Delete Item" className="text-destructive hover:text-destructive/80" onClick={() => handleDeleteItem(item.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -148,6 +251,11 @@ export default function MenuManagementPage() {
                   ))}
                 </TableBody>
               </Table>
+               {filteredMenuItems.length === 0 && (
+                <p className="text-center text-muted-foreground py-8">
+                  {searchTerm ? "No items match your search." : "No menu items available. Try adding some!"}
+                </p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -164,31 +272,35 @@ export default function MenuManagementPage() {
               </Button>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Category Name</TableHead>
-                    <TableHead className="text-center">Items</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockCategories.map((category) => (
-                    <TableRow key={category.id} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">{category.name}</TableCell>
-                      <TableCell className="text-center">{category.itemCount}</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" title="Edit Category">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" title="Delete Category" className="text-destructive hover:text-destructive/80">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+              {categories.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Category Name</TableHead>
+                      <TableHead className="text-center">Items</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {categories.map((category) => (
+                      <TableRow key={category.id} className="hover:bg-muted/50">
+                        <TableCell className="font-medium">{category.name}</TableCell>
+                        <TableCell className="text-center">{category.itemCount}</TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="icon" title="Edit Category" disabled>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" title="Delete Category" className="text-destructive hover:text-destructive/80" disabled>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                 <p className="text-center text-muted-foreground py-8">No categories found. Add menu items to see categories here.</p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -205,33 +317,37 @@ export default function MenuManagementPage() {
               </Button>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Modifier Group Name</TableHead>
-                    <TableHead>Options</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {mockModifiers.map((modifier) => (
-                    <TableRow key={modifier.id} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">{modifier.name}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {modifier.items.slice(0, 3).join(', ')}{modifier.items.length > 3 ? '...' : ''}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" title="Edit Modifier Group">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" title="Delete Modifier Group" className="text-destructive hover:text-destructive/80">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+              {mockModifiers.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Modifier Group Name</TableHead>
+                      <TableHead>Options</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {mockModifiers.map((modifier) => (
+                      <TableRow key={modifier.id} className="hover:bg-muted/50">
+                        <TableCell className="font-medium">{modifier.name}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {modifier.items.slice(0, 3).join(', ')}{modifier.items.length > 3 ? '...' : ''}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="icon" title="Edit Modifier Group" disabled>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" title="Delete Modifier Group" className="text-destructive hover:text-destructive/80" disabled>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <p className="text-center text-muted-foreground py-8">No modifiers defined yet.</p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -239,4 +355,3 @@ export default function MenuManagementPage() {
     </div>
   );
 }
-
