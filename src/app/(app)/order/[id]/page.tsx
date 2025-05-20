@@ -394,7 +394,7 @@ export default function OrderEntryPage() {
                      {itemsInCategory.length === 0 && selectedCategory === 'All' && availableMenuItems.length > 0 && (
                        <p className="text-muted-foreground col-span-full">No items in category &quot;{category}&quot;. Check other categories or &quot;All&quot;.</p>
                     )}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {itemsInCategory.map((item) => (
                         <Card
                           key={item.id}
