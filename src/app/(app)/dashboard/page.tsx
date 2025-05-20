@@ -61,6 +61,9 @@ export default function DashboardPage() {
   const [openChecksCount, setOpenChecksCount] = useState(0);
   const [totalOrdersCount, setTotalOrdersCount] = useState(0);
   const [promotionalItems, setPromotionalItems] = useState<MenuItem[]>(initialPromotionalItems);
+  const [todaysSales, setTodaysSales] = useState(0);
+  const [coversServed, setCoversServed] = useState(0);
+
 
   const loadDashboardData = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -71,16 +74,26 @@ export default function DashboardPage() {
           const savedOrders: MockOrder[] = JSON.parse(savedOrdersRaw);
           const activeOrders = savedOrders.filter(order => ['Active', 'Preparing', 'PendingPayment'].includes(order.status));
           setOpenChecksCount(activeOrders.length);
-          setTotalOrdersCount(savedOrders.length);
+          setTotalOrdersCount(savedOrders.length); // Total of all orders (active and completed)
+
+          const completedOrPaidOrders = savedOrders.filter(order => ['Paid', 'Completed'].includes(order.status));
+          const calculatedSales = completedOrPaidOrders.reduce((sum, order) => sum + order.total, 0);
+          setTodaysSales(calculatedSales);
+          setCoversServed(completedOrPaidOrders.length); // Count of completed/paid orders as proxy for covers
+
         } else {
           // Fallback if no orders in local storage
-          setOpenChecksCount(12); // Default mock
-          setTotalOrdersCount(87); // Default mock
+          setOpenChecksCount(12); 
+          setTotalOrdersCount(87); 
+          setTodaysSales(1234.56); // Default mock if no orders
+          setCoversServed(35); // Default mock if no orders
         }
       } catch (e) {
         console.error("Failed to load orders for dashboard", e);
         setOpenChecksCount(12);
         setTotalOrdersCount(87);
+        setTodaysSales(1234.56);
+        setCoversServed(35);
       }
 
       // Load menu items for promotions
@@ -90,7 +103,10 @@ export default function DashboardPage() {
           const allMenuItems: MenuItem[] = JSON.parse(menuItemsRaw);
           const availableItems = allMenuItems.filter(item => item.availability);
           if (availableItems.length > 0) {
-            setPromotionalItems(availableItems.slice(0, 2));
+            setPromotionalItems(availableItems.slice(0, 2).map(item => ({
+              ...item,
+              imageUrl: item.imageUrl || `https://placehold.co/600x400.png?text=${item.name.substring(0,2)}`
+            })));
           } else {
             setPromotionalItems(initialPromotionalItems); // Fallback if no available items
           }
@@ -106,16 +122,13 @@ export default function DashboardPage() {
 
   useEffect(() => {
     loadDashboardData();
-    // Optional: Listen for storage changes to auto-update, though can be complex
-    // window.addEventListener('storage', loadDashboardData);
-    // return () => window.removeEventListener('storage', loadDashboardData);
   }, [loadDashboardData]);
 
   const summaryCards = [
-    { title: "Today's Sales", value: "$1,234.56", icon: DollarSign, change: "+5.2%", changeType: "positive" as const, isStatic: true },
-    { title: "Open Checks", value: openChecksCount.toString(), icon: Layers, change: "", changeType: "neutral" as const },
-    { title: "Total Orders", value: totalOrdersCount.toString(), icon: ShoppingBag, change: "", changeType: "neutral" as const },
-    { title: "Covers Served", value: "35", icon: Users, change: "+3", changeType: "positive" as const, isStatic: true },
+    { title: "Today's Sales", value: `$${todaysSales.toFixed(2)}`, icon: DollarSign, isStatic: false, change: "", changeType: "neutral" as const },
+    { title: "Open Checks", value: openChecksCount.toString(), icon: Layers, isStatic: false, change: "", changeType: "neutral" as const },
+    { title: "Total Orders", value: totalOrdersCount.toString(), icon: ShoppingBag, isStatic: false, change: "", changeType: "neutral" as const }, // This is ALL orders
+    { title: "Covers Served", value: coversServed.toString(), icon: Users, isStatic: false, change: "", changeType: "neutral" as const }, // This is completed/paid orders
   ];
 
 
@@ -143,11 +156,6 @@ export default function DashboardPage() {
                     {card.change}
                  </p>
               )}
-               {card.isStatic && card.change && (
-                  <p className={`text-xs ${card.changeType === 'positive' ? 'text-green-600' : 'text-red-600'}`}>
-                    {card.change} from yesterday
-                  </p>
-               )}
             </CardContent>
           </Card>
         ))}
@@ -218,7 +226,7 @@ export default function DashboardPage() {
           {promotionalItems.length === 0 && (
              <p className="text-muted-foreground md:col-span-2 text-center py-4">No special promotions currently. Check the menu!</p>
           )}
-           {promotionalItems.length === 1 && ( // Add a placeholder if only one promo item
+           {promotionalItems.length === 1 && ( 
             <div className="relative aspect-video rounded-lg overflow-hidden group border-2 border-dashed border-muted-foreground/50 flex items-center justify-center">
               <Image src="https://placehold.co/600x400.png" alt="Placeholder Promotion" layout="fill" objectFit="cover" data-ai-hint="food restaurant" />
                <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -231,4 +239,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
