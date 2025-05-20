@@ -1,8 +1,11 @@
+
 'use client';
 
 import type React from 'react';
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast'; // Import useToast
+import { LogIn, LogOut } from 'lucide-react'; // Import icons for toast
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -21,6 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const { toast } = useToast(); // Initialize useToast
 
   const hardcodedUsername = 'aksh';
   const hardcodedPassword = 'aksh';
@@ -69,19 +73,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userData = { username: usernameInput };
       setUser(userData);
       localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ isAuthenticated: true, user: userData }));
+      toast({
+        title: "Login Successful!",
+        description: `Welcome back, ${usernameInput}! Redirecting...`,
+        icon: <LogIn className="h-5 w-5 text-green-500" />,
+      });
       setIsLoading(false);
       router.push('/dashboard');
       return true;
     }
     setUser(null);
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    // Toast for login failure is handled in LoginPage.tsx
     setIsLoading(false);
     return false;
   };
 
   const logout = () => {
+    const currentUsername = user?.username;
     setUser(null);
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    toast({
+      title: "Logged Out Successfully",
+      description: currentUsername ? `Goodbye, ${currentUsername}!` : "You have been logged out.",
+      icon: <LogOut className="h-5 w-5" />,
+    });
     router.push('/login');
   };
 
