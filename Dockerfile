@@ -1,54 +1,60 @@
-# Dockerfile for Next.js Seera Application
-
-# ---- Builder Stage ----
-# Use a specific version of Node.js for reproducibility, Alpine for smaller image size
-FROM node:20-alpine AS builder
-
-# Set working directory
+# Dockerfile
+# Stage 1: Build the application
+FROM node:18-alpine AS builder
 WORKDIR /app
 
-# Copy package.json and package-lock.json (if it exists)
-# This allows Docker to cache the npm install step if these files haven't changed
-COPY package.json ./
-# If you use package-lock.json, ensure it's part of your project or generated before build.
-# COPY package-lock.json ./
+# Copy package.json and package-lock.json (or yarn.lock)
+COPY package*.json ./
 
 # Install dependencies
-# Using --frozen-lockfile to ensure reproducible builds based on package-lock.json (if present) or package.json
-RUN npm install --frozen-lockfile
+# Using npm ci for cleaner, reproducible installs in CI/build environments
+RUN npm ci
 
 # Copy the rest of the application code
 COPY . .
 
-# Environment variables can be set here if needed for the build process
-# Example: ENV NEXT_PUBLIC_API_URL_BUILDTIME=https://api.example.com
-# Ensure GOOGLE_AI_API_KEY is available if build-time Genkit operations need it,
-# though it's better to have it as a runtime variable for the deployed app.
-
-# Build the Next.js application for production
-# This will leverage the `output: 'standalone'` in next.config.ts
+# Build the Next.js application
+# NEXT_PUBLIC_ environment variables needed at build time should be set here
+# e.g., using ARG in combination with ENV if passed during docker build
+# ARG NEXT_PUBLIC_MY_VAR
+# ENV NEXT_PUBLIC_MY_VAR=${NEXT_PUBLIC_MY_VAR}
 RUN npm run build
 
-# ---- Runner Stage ----
-# Use a slim, secure base image for the runner
-FROM node:20-alpine AS runner
-
+# Stage 2: Create the production image
+FROM node:18-alpine AS runner
 WORKDIR /app
 
-# Set environment to production
-ENV NODE_ENV production
-# The Next.js app inside a container will listen on 0.0.0.0 by default.
-# You can set the PORT environment variable if you want to run on a different port.
-# Example: ENV PORT=8080
+ENV NODE_ENV=production
+# Set a default port. This can be overridden by the PORT environment variable at runtime.
+# Next.js will automatically use this PORT.
+ENV PORT=3000
 
-# Copy the standalone output from the builder stage
-# This includes the server.js, .next/static, public, and minimal node_modules
-COPY --from=builder /app/.next/standalone ./
+# Create a non-root user and group for security
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
-# Expose the port the app runs on (Next.js default for production is 3000)
-# This should match the PORT environment variable if you set one.
+# Copy built assets from the builder stage
+# Copy public folder
+COPY --from=builder /app/public ./public
+
+# Copy standalone server and static assets
+# The --chown flag sets the owner of the copied files to the non-root user
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Set the user to the non-root user
+USER nextjs
+
+# Expose the port the app will run on. This is documentation for the operator.
+# The actual port mapping is done when running the container (e.g., docker run -p <host_port>:3000).
 EXPOSE 3000
 
-# Command to run the Next.js standalone server
-# This server.js is created by the `output: 'standalone'` build.
+# Healthcheck
+# This checks if the server is responding on the port defined by the PORT environment variable.
+# wget is generally available on alpine images.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost:${PORT}/ || exit 1
+
+# Start the Next.js application
+# server.js is at the root of the standalone directory.
 CMD ["node", "server.js"]
