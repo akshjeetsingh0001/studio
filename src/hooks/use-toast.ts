@@ -138,7 +138,8 @@ let memoryState: State = { toasts: [] }
 function dispatch(action: Action) {
   memoryState = reducer(memoryState, action)
   listeners.forEach((listener) => {
-    listener(memoryState)
+    // Defer listener updates to prevent "Cannot update a component while rendering another component"
+    setTimeout(() => listener(memoryState), 0);
   })
 }
 
@@ -177,16 +178,18 @@ function useToast() {
   const [state, setState] = React.useState<State>(memoryState)
 
   React.useEffect(() => {
-    // Capture the current setState function to ensure the correct one is removed.
     const currentSetState = setState;
-    listeners.push(currentSetState)
-    return () => {
-      const index = listeners.indexOf(currentSetState)
-      if (index > -1) {
-        listeners.splice(index, 1)
-      }
+    // Prevent adding the same listener multiple times, important for StrictMode
+    if (!listeners.includes(currentSetState)) {
+        listeners.push(currentSetState);
     }
-  }, []) // Changed dependency array from [state] to []
+    return () => {
+      const index = listeners.indexOf(currentSetState);
+      if (index > -1) {
+        listeners.splice(index, 1);
+      }
+    };
+  }, []); // Empty dependency array ensures this runs once on mount and cleans up on unmount.
 
   return {
     ...state,
