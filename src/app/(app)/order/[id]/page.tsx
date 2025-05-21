@@ -16,7 +16,7 @@ import { getUpsellSuggestions, type GetUpsellSuggestionsInput } from '@/ai/flows
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Fallback menu items - removed to rely on localStorage or start empty.
+
 const initialMockMenuItemsForOrderPage: MenuItem[] = [];
 
 interface MenuItem {
@@ -73,14 +73,14 @@ export default function OrderEntryPage() {
             return;
           }
         }
-         // If localStorage is empty or items are not an array, set empty menu.
+         
         setMenuItems([]);
       } catch (e) {
         console.error("Failed to load menu items from localStorage for order page", e);
-        setMenuItems([]); // Fallback to empty array on error
+        setMenuItems([]); 
       }
     } else {
-       setMenuItems([]); // Fallback for SSR or non-browser
+       setMenuItems([]); 
     }
   }, []);
 
@@ -367,24 +367,24 @@ export default function OrderEntryPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
-        <Card className="lg:col-span-2 flex flex-col shadow-lg">
+      <div className="flex flex-col lg:flex-row gap-6 flex-1 overflow-hidden">
+        <Card className="lg:w-2/3 flex flex-col shadow-lg">
           <CardContent className="flex-1 overflow-hidden p-0">
             <ScrollArea className="h-full p-6 pt-0">
-              {categoriesToDisplay.map(category => {
-                const itemsInCategory = filteredMenuItems.filter(item => item.category === category);
+              {categoriesToDisplay.map(catName => {
+                const itemsInCategory = filteredMenuItems.filter(item => item.category === catName);
                 if (itemsInCategory.length === 0 && selectedCategory !== 'All') return null; 
 
                 return (
-                  <div key={category} className="mb-6">
+                  <div key={catName} className="mb-6">
                      { selectedCategory === 'All' && (
-                        <h3 className="text-xl font-semibold mb-4 pb-2 border-b border-border sticky top-0 bg-card py-2 z-10">{category}</h3>
+                        <h3 className="text-xl font-semibold mb-4 pb-2 border-b border-border sticky top-0 bg-card py-2 z-10">{catName}</h3>
                      )}
                     {itemsInCategory.length === 0 && selectedCategory !== 'All' && (
                        <p className="text-muted-foreground col-span-full">No available items in this category.</p>
                     )}
                      {itemsInCategory.length === 0 && selectedCategory === 'All' && availableMenuItems.length > 0 && (
-                       <p className="text-muted-foreground col-span-full">No items in category &quot;{category}&quot;. Check other categories or &quot;All&quot;.</p>
+                       <p className="text-muted-foreground col-span-full">No items in category &quot;{catName}&quot;. Check other categories or &quot;All&quot;.</p>
                     )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {itemsInCategory.map((item) => (
@@ -424,7 +424,7 @@ export default function OrderEntryPage() {
           </CardContent>
         </Card>
 
-        <div className="flex flex-col gap-6 overflow-hidden">
+        <div className="lg:w-1/3 flex flex-col gap-6 overflow-hidden">
           <Card className="flex-1 flex flex-col shadow-lg max-h-[65%]"> 
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -524,3 +524,4 @@ export default function OrderEntryPage() {
     </div>
   );
 }
+
