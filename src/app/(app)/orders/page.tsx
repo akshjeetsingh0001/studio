@@ -8,13 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Eye, PlusCircle, Printer, Search, CheckCircle2, Trash2, CheckCheck } from 'lucide-react';
+import { Eye, PlusCircle, Printer, Search, CheckCircle2, Trash2, CheckCheck, ChefHat } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import type { OrderItem } from '@/app/(app)/order/[id]/page'; // Import OrderItem type
+import type { OrderItem } from '@/app/(app)/order/[id]/page'; 
 
 // Initial mock data for orders - removed to rely on localStorage or start empty.
 const initialMockOrders: MockOrder[] = [];
@@ -22,10 +22,8 @@ const initialMockOrders: MockOrder[] = [];
 interface MockOrder {
   id: string;
   table: string;
-  // items: number; // This property will remain in the interface, but not be displayed
   total: number;
   status: string;
-  // server: string; // This property will remain in the interface, but not be displayed
   time: string;
   orderDetails?: OrderItem[];
 }
@@ -35,13 +33,17 @@ const USER_SAVED_ORDERS_KEY = 'dineSwiftUserSavedOrders';
 const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
   switch (status.toLowerCase()) {
     case 'active':
+      return 'outline'; 
     case 'preparing':
+      return 'default'; // Using 'default' which often maps to primary color for visibility
+    case 'ready':
+      return 'secondary'; // Using 'secondary' which can be styled distinctively
     case 'pendingpayment':
-      return 'outline'; // More subtle for ongoing
+      return 'outline'; 
     case 'paid':
-      return 'default'; // Primary color for "Paid" to stand out as an active step
+      return 'default'; 
     case 'completed':
-      return 'secondary'; // Muted for finished
+      return 'secondary'; 
     case 'cancelled':
       return 'destructive';
     default:
@@ -52,17 +54,30 @@ const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destr
 const parseTime = (timeStr: string): number => {
   if (!timeStr) return Date.now();
   const [time, modifier] = timeStr.split(' ');
-  if (!time || !modifier) return Date.now();
+  if (!time || !modifier) return Date.now(); // Fallback for incomplete time strings
   let [hours, minutes] = time.split(':').map(Number);
-  if (isNaN(hours) || isNaN(minutes)) return Date.now();
 
+  // Handle potential NaN from parsing if time format is unexpected
+  if (isNaN(hours) || isNaN(minutes)) {
+      const now = new Date();
+      // Attempt to parse just hours if minutes are missing/invalid, or fallback to current time
+      if (!isNaN(hours) && modifier) { // if hours are valid but minutes are not
+        if (modifier.toUpperCase() === 'PM' && hours < 12) hours += 12;
+        if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0; // Midnight case
+        now.setHours(hours, 0, 0, 0); // Set minutes to 0 if invalid
+        return now.getTime();
+      }
+      return now.getTime(); // Fallback to current time if parsing fails significantly
+  }
+  
   if (modifier.toUpperCase() === 'PM' && hours < 12) hours += 12;
-  if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0;
+  if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0; // Midnight case
 
   const date = new Date();
   date.setHours(hours, minutes, 0, 0);
   return date.getTime();
 };
+
 
 export default function OrdersPage() {
   const [allOrders, setAllOrders] = useState<MockOrder[]>([]);
@@ -97,37 +112,33 @@ export default function OrdersPage() {
 
   useEffect(() => {
     loadOrders();
+     // Optional: set up an interval to refresh orders if KDS updates are frequent
+    const intervalId = setInterval(loadOrders, 5000); // Refresh every 5 seconds
+    return () => clearInterval(intervalId);
   }, [loadOrders]);
 
 
-  const handleMarkAsPaid = (orderId: string) => {
+  const handleUpdateOrderStatus = (orderId: string, newStatus: string, successMessage: string, icon?: React.ReactNode) => {
     setAllOrders(prevOrders => {
       const updatedOrders = prevOrders.map(order =>
-        order.id === orderId ? { ...order, status: 'Paid' } : order
+        order.id === orderId ? { ...order, status: newStatus, time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) } : order
       );
       updateLocalStorage(updatedOrders);
       toast({
         title: "Order Updated",
-        description: `Order ${orderId} marked as Paid.`,
-        icon: <CheckCircle2 className="h-4 w-4 text-green-600" />,
+        description: successMessage,
+        icon: icon,
       });
       return updatedOrders;
     });
   };
 
+  const handleMarkAsPaid = (orderId: string) => {
+    handleUpdateOrderStatus(orderId, 'Paid', `Order ${orderId} marked as Paid.`, <CheckCircle2 className="h-4 w-4 text-green-600" />);
+  };
+
   const handleCompleteOrder = (orderId: string) => {
-    setAllOrders(prevOrders => {
-      const updatedOrders = prevOrders.map(order =>
-        order.id === orderId ? { ...order, status: 'Completed' } : order
-      );
-      updateLocalStorage(updatedOrders);
-      toast({
-        title: "Order Updated",
-        description: `Order ${orderId} marked as Completed.`,
-        icon: <CheckCheck className="h-4 w-4 text-blue-600" />,
-      });
-      return updatedOrders;
-    });
+     handleUpdateOrderStatus(orderId, 'Completed', `Order ${orderId} marked as Completed.`, <CheckCheck className="h-4 w-4 text-blue-600" />);
   };
 
   const handleDeleteOrder = (orderId: string) => {
@@ -150,14 +161,13 @@ export default function OrdersPage() {
       filtered = filtered.filter(order =>
         order.id.toLowerCase().includes(filterTerm.toLowerCase()) ||
         order.table.toLowerCase().includes(filterTerm.toLowerCase()) ||
-        // order.server.toLowerCase().includes(filterTerm.toLowerCase()) || 
         order.status.toLowerCase().includes(filterTerm.toLowerCase())
       );
     }
     return filtered.sort((a, b) => parseTime(b.time) - parseTime(a.time));
   };
 
-  const activeStatuses = ['Active', 'Preparing', 'PendingPayment', 'Paid'];
+  const activeStatuses = ['Active', 'Preparing', 'Ready', 'PendingPayment', 'Paid'];
   const completedStatuses = ['Completed', 'Cancelled'];
 
   const activeOrders = filterAndSortOrders(allOrders, searchTerm, activeStatuses);
@@ -196,7 +206,7 @@ export default function OrdersPage() {
             <Card className="shadow-sm">
               <CardHeader>
                 <CardTitle>Active Orders</CardTitle>
-                <CardDescription>Orders currently in progress, being prepared, pending payment, or paid. Sorted by newest first.</CardDescription>
+                <CardDescription>Orders currently in progress, preparing, ready, pending payment, or paid. Sorted by newest first.</CardDescription>
               </CardHeader>
               <CardContent>
                 <OrderTable
@@ -218,8 +228,8 @@ export default function OrdersPage() {
               <CardContent>
                 <OrderTable
                   orders={completedOrders}
-                  onMarkAsPaid={() => {}} // Not applicable here
-                  onCompleteOrder={() => {}} // Not applicable here
+                  onMarkAsPaid={() => {}} 
+                  onCompleteOrder={() => {}} 
                   onDeleteOrder={handleDeleteOrder}
                   isViewingActiveOrders={false}
                 />
@@ -288,7 +298,7 @@ function OrderTable({ orders, onMarkAsPaid, onCompleteOrder, onDeleteOrder, isVi
                 </TooltipContent>
               </Tooltip>
 
-              {isViewingActiveOrders && ['active', 'preparing', 'pendingpayment'].includes(order.status.toLowerCase()) && (
+              {isViewingActiveOrders && ['active', 'preparing', 'ready', 'pendingpayment'].includes(order.status.toLowerCase()) && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="icon" onClick={() => onMarkAsPaid(order.id)}>
@@ -314,10 +324,10 @@ function OrderTable({ orders, onMarkAsPaid, onCompleteOrder, onDeleteOrder, isVi
                 </Tooltip>
               )}
               
-              {['paid', 'completed'].includes(order.status.toLowerCase()) && (
+              {(order.status.toLowerCase() === 'paid' || order.status.toLowerCase() === 'completed') && (
                  <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" title="Print Receipt" disabled> {/* Print to be implemented */}
+                    <Button variant="ghost" size="icon" title="Print Receipt" disabled> 
                       <Printer className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
@@ -345,3 +355,6 @@ function OrderTable({ orders, onMarkAsPaid, onCompleteOrder, onDeleteOrder, isVi
     </Table>
   );
 }
+
+
+    
