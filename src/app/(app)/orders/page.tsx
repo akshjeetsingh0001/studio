@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Eye, PlusCircle, Printer, Search, CheckCircle2, Trash2 } from 'lucide-react';
+import { Eye, PlusCircle, Printer, Search, CheckCircle2, Trash2, CheckCheck } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,10 +22,10 @@ const initialMockOrders: MockOrder[] = [];
 interface MockOrder {
   id: string;
   table: string;
-  items: number; // This property will remain in the interface, but not be displayed
+  // items: number; // This property will remain in the interface, but not be displayed
   total: number;
   status: string;
-  server: string; // This property will remain in the interface, but not be displayed
+  // server: string; // This property will remain in the interface, but not be displayed
   time: string;
   orderDetails?: OrderItem[];
 }
@@ -37,10 +37,11 @@ const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destr
     case 'active':
     case 'preparing':
     case 'pendingpayment':
-      return 'default';
+      return 'outline'; // More subtle for ongoing
     case 'paid':
+      return 'default'; // Primary color for "Paid" to stand out as an active step
     case 'completed':
-      return 'secondary';
+      return 'secondary'; // Muted for finished
     case 'cancelled':
       return 'destructive';
     default:
@@ -82,16 +83,15 @@ export default function OrdersPage() {
 
         if (savedOrdersRaw) {
           const parsedOrders = JSON.parse(savedOrdersRaw);
-          // Ensure parsedOrders is an array
           loadedOrders = Array.isArray(parsedOrders) ? parsedOrders : [];
         }
         setAllOrders(loadedOrders);
       } catch (e) {
         console.error("Failed to load orders from localStorage", e);
-        setAllOrders([]); // Fallback to empty array
+        setAllOrders([]); 
       }
     } else {
-        setAllOrders([]); // Fallback for SSR or non-browser
+        setAllOrders([]); 
     }
   }, []);
 
@@ -109,7 +109,22 @@ export default function OrdersPage() {
       toast({
         title: "Order Updated",
         description: `Order ${orderId} marked as Paid.`,
-        icon: <CheckCircle2 className="h-4 w-4" />,
+        icon: <CheckCircle2 className="h-4 w-4 text-green-600" />,
+      });
+      return updatedOrders;
+    });
+  };
+
+  const handleCompleteOrder = (orderId: string) => {
+    setAllOrders(prevOrders => {
+      const updatedOrders = prevOrders.map(order =>
+        order.id === orderId ? { ...order, status: 'Completed' } : order
+      );
+      updateLocalStorage(updatedOrders);
+      toast({
+        title: "Order Updated",
+        description: `Order ${orderId} marked as Completed.`,
+        icon: <CheckCheck className="h-4 w-4 text-blue-600" />,
       });
       return updatedOrders;
     });
@@ -129,30 +144,24 @@ export default function OrdersPage() {
     });
   };
 
-  const filterAndSortOrders = (orders: MockOrder[], filterTerm: string, sortActive: boolean = false) => {
-    let filtered = orders;
+  const filterAndSortOrders = (orders: MockOrder[], filterTerm: string, statuses: string[]) => {
+    let filtered = orders.filter(order => statuses.includes(order.status));
     if (filterTerm) {
-      filtered = orders.filter(order =>
+      filtered = filtered.filter(order =>
         order.id.toLowerCase().includes(filterTerm.toLowerCase()) ||
         order.table.toLowerCase().includes(filterTerm.toLowerCase()) ||
-        order.server.toLowerCase().includes(filterTerm.toLowerCase()) || // Server still used for search
+        // order.server.toLowerCase().includes(filterTerm.toLowerCase()) || 
         order.status.toLowerCase().includes(filterTerm.toLowerCase())
       );
     }
-    // Sort by time, newest first for all tabs for consistency
     return filtered.sort((a, b) => parseTime(b.time) - parseTime(a.time));
   };
 
-  const activeOrders = filterAndSortOrders(
-    allOrders.filter(order => ['Active', 'Preparing', 'PendingPayment'].includes(order.status)),
-    searchTerm,
-    true
-  );
+  const activeStatuses = ['Active', 'Preparing', 'PendingPayment', 'Paid'];
+  const completedStatuses = ['Completed', 'Cancelled'];
 
-  const completedOrders = filterAndSortOrders(
-    allOrders.filter(order => ['Paid', 'Completed', 'Cancelled'].includes(order.status)),
-    searchTerm
-  );
+  const activeOrders = filterAndSortOrders(allOrders, searchTerm, activeStatuses);
+  const completedOrders = filterAndSortOrders(allOrders, searchTerm, completedStatuses);
 
 
   return (
@@ -187,14 +196,15 @@ export default function OrdersPage() {
             <Card className="shadow-sm">
               <CardHeader>
                 <CardTitle>Active Orders</CardTitle>
-                <CardDescription>Orders currently in progress, being prepared, or pending payment. Sorted by newest first.</CardDescription>
+                <CardDescription>Orders currently in progress, being prepared, pending payment, or paid. Sorted by newest first.</CardDescription>
               </CardHeader>
               <CardContent>
                 <OrderTable
                   orders={activeOrders}
                   onMarkAsPaid={handleMarkAsPaid}
+                  onCompleteOrder={handleCompleteOrder}
                   onDeleteOrder={handleDeleteOrder}
-                  isActiveTab={true}
+                  isViewingActiveOrders={true}
                 />
               </CardContent>
             </Card>
@@ -203,14 +213,15 @@ export default function OrdersPage() {
             <Card className="shadow-sm">
               <CardHeader>
                 <CardTitle>Completed & Past Orders</CardTitle>
-                <CardDescription>Orders that have been paid, completed, or cancelled.</CardDescription>
+                <CardDescription>Orders that have been completed or cancelled.</CardDescription>
               </CardHeader>
               <CardContent>
                 <OrderTable
                   orders={completedOrders}
-                  onMarkAsPaid={() => {}}
+                  onMarkAsPaid={() => {}} // Not applicable here
+                  onCompleteOrder={() => {}} // Not applicable here
                   onDeleteOrder={handleDeleteOrder}
-                  isActiveTab={false}
+                  isViewingActiveOrders={false}
                 />
               </CardContent>
             </Card>
@@ -224,11 +235,12 @@ export default function OrdersPage() {
 interface OrderTableProps {
   orders: MockOrder[];
   onMarkAsPaid: (orderId: string) => void;
+  onCompleteOrder: (orderId: string) => void;
   onDeleteOrder: (orderId: string) => void;
-  isActiveTab: boolean;
+  isViewingActiveOrders: boolean;
 }
 
-function OrderTable({ orders, onMarkAsPaid, onDeleteOrder, isActiveTab }: OrderTableProps) {
+function OrderTable({ orders, onMarkAsPaid, onCompleteOrder, onDeleteOrder, isViewingActiveOrders }: OrderTableProps) {
   if (orders.length === 0) {
     return <p className="text-center text-muted-foreground py-8">No orders to display in this category.</p>;
   }
@@ -246,10 +258,8 @@ function OrderTable({ orders, onMarkAsPaid, onDeleteOrder, isActiveTab }: OrderT
         <TableRow>
           <TableHead>Order ID</TableHead>
           <TableHead>Table/Type</TableHead>
-          {/* <TableHead className="text-center">Items</TableHead> // Removed Items column header */}
           <TableHead className="text-right">Total</TableHead>
           <TableHead>Status</TableHead>
-          {/* <TableHead>Server</TableHead> // Removed Server column header */}
           <TableHead>Time</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
@@ -259,12 +269,10 @@ function OrderTable({ orders, onMarkAsPaid, onDeleteOrder, isActiveTab }: OrderT
           <TableRow key={order.id} className="hover:bg-muted/50">
             <TableCell className="font-medium">{order.id}</TableCell>
             <TableCell>{order.table}</TableCell>
-            {/* <TableCell className="text-center">{order.items}</TableCell> // Removed Items cell */}
             <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
             <TableCell>
               <Badge variant={getStatusBadgeVariant(order.status)}>{order.status}</Badge>
             </TableCell>
-            {/* <TableCell>{order.server}</TableCell> // Removed Server cell */}
             <TableCell>{order.time}</TableCell>
             <TableCell className="text-right space-x-1">
               <Tooltip>
@@ -280,7 +288,7 @@ function OrderTable({ orders, onMarkAsPaid, onDeleteOrder, isActiveTab }: OrderT
                 </TooltipContent>
               </Tooltip>
 
-              {isActiveTab && ['Active', 'Preparing', 'PendingPayment'].includes(order.status) && (
+              {isViewingActiveOrders && ['active', 'preparing', 'pendingpayment'].includes(order.status.toLowerCase()) && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="icon" onClick={() => onMarkAsPaid(order.id)}>
@@ -289,6 +297,32 @@ function OrderTable({ orders, onMarkAsPaid, onDeleteOrder, isActiveTab }: OrderT
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Mark as Paid</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+
+              {isViewingActiveOrders && order.status.toLowerCase() === 'paid' && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={() => onCompleteOrder(order.id)}>
+                      <CheckCheck className="h-4 w-4 text-blue-600" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Mark as Completed</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              
+              {['paid', 'completed'].includes(order.status.toLowerCase()) && (
+                 <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" title="Print Receipt" disabled> {/* Print to be implemented */}
+                      <Printer className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Print Receipt (Coming Soon)</p>
                   </TooltipContent>
                 </Tooltip>
               )}
@@ -304,18 +338,6 @@ function OrderTable({ orders, onMarkAsPaid, onDeleteOrder, isActiveTab }: OrderT
                 </TooltipContent>
               </Tooltip>
 
-              {['Paid', 'Completed'].includes(order.status) && (
-                 <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" title="Print Receipt">
-                      <Printer className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Print Receipt</p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
             </TableCell>
           </TableRow>
         ))}
