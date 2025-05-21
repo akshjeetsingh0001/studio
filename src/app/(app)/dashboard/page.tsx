@@ -36,20 +36,8 @@ interface MockOrder {
 const USER_MENU_ITEMS_KEY = 'dineSwiftMenuItems';
 const USER_SAVED_ORDERS_KEY = 'dineSwiftUserSavedOrders';
 
-const initialPromotionalItems: MenuItem[] = [
-  { id: 'PROMO1', name: 'Featured Pasta', category: 'Main Course', price: 12.99, availability: true, imageUrl: 'https://placehold.co/600x400.png', 'data-ai-hint': 'pasta dish' },
-  { id: 'PROMO2', name: 'Specialty Mocktail', category: 'Drinks', price: 5.00, availability: true, imageUrl: 'https://placehold.co/600x400.png', 'data-ai-hint': 'cocktail drink' },
-];
-
-// Initial mock data for table statuses (remains static for dashboard visual for now)
-const tableStatuses = [
-  { id: 'T1', status: 'Available', items: 0, server: 'N/A' },
-  { id: 'T2', status: 'Occupied', items: 3, server: 'Jane D.' },
-  { id: 'T3', status: 'Needs Cleaning', items: 0, server: 'N/A' },
-  { id: 'T4', status: 'Reserved', items: 0, server: 'John S.' },
-  { id: 'T5', status: 'Occupied', items: 5, server: 'Alice M.' },
-  { id: 'T6', status: 'Available', items: 0, server: 'N/A' },
-];
+// Initial mock data for table statuses - removed for dynamic behavior or empty state
+const initialTableStatuses: { id: string; status: string; items: number; server: string }[] = [];
 
 const quickActions = [
   { label: "New Order", href: "/order/new", icon: Utensils },
@@ -60,9 +48,10 @@ const quickActions = [
 export default function DashboardPage() {
   const [openChecksCount, setOpenChecksCount] = useState(0);
   const [totalOrdersCount, setTotalOrdersCount] = useState(0);
-  const [promotionalItems, setPromotionalItems] = useState<MenuItem[]>(initialPromotionalItems);
+  const [promotionalItems, setPromotionalItems] = useState<MenuItem[]>([]);
   const [todaysSales, setTodaysSales] = useState(0);
   const [coversServed, setCoversServed] = useState(0);
+  const [tableStatuses, setTableStatuses] = useState(initialTableStatuses);
 
 
   const loadDashboardData = useCallback(() => {
@@ -74,26 +63,25 @@ export default function DashboardPage() {
           const savedOrders: MockOrder[] = JSON.parse(savedOrdersRaw);
           const activeOrders = savedOrders.filter(order => ['Active', 'Preparing', 'PendingPayment'].includes(order.status));
           setOpenChecksCount(activeOrders.length);
-          setTotalOrdersCount(savedOrders.length); // Total of all orders (active and completed)
+          setTotalOrdersCount(savedOrders.length);
 
           const completedOrPaidOrders = savedOrders.filter(order => ['Paid', 'Completed'].includes(order.status));
           const calculatedSales = completedOrPaidOrders.reduce((sum, order) => sum + order.total, 0);
           setTodaysSales(calculatedSales);
-          setCoversServed(completedOrPaidOrders.length); // Count of completed/paid orders as proxy for covers
+          setCoversServed(completedOrPaidOrders.length);
 
         } else {
-          // Fallback if no orders in local storage
-          setOpenChecksCount(12); 
-          setTotalOrdersCount(87); 
-          setTodaysSales(1234.56); // Default mock if no orders
-          setCoversServed(35); // Default mock if no orders
+          setOpenChecksCount(0); 
+          setTotalOrdersCount(0); 
+          setTodaysSales(0); 
+          setCoversServed(0); 
         }
       } catch (e) {
         console.error("Failed to load orders for dashboard", e);
-        setOpenChecksCount(12);
-        setTotalOrdersCount(87);
-        setTodaysSales(1234.56);
-        setCoversServed(35);
+        setOpenChecksCount(0);
+        setTotalOrdersCount(0);
+        setTodaysSales(0);
+        setCoversServed(0);
       }
 
       // Load menu items for promotions
@@ -108,15 +96,20 @@ export default function DashboardPage() {
               imageUrl: item.imageUrl || `https://placehold.co/600x400.png?text=${item.name.substring(0,2)}`
             })));
           } else {
-            setPromotionalItems(initialPromotionalItems); // Fallback if no available items
+            setPromotionalItems([]); 
           }
         } else {
-          setPromotionalItems(initialPromotionalItems); // Fallback if no menu items in storage
+          setPromotionalItems([]); 
         }
       } catch (e) {
         console.error("Failed to load menu items for dashboard promotions", e);
-        setPromotionalItems(initialPromotionalItems);
+        setPromotionalItems([]);
       }
+      // For table statuses, it would ideally fetch from a backend or more complex localStorage state.
+      // Since table specific orders are in `USER_SAVED_ORDERS_KEY`, a more complex derivation is needed.
+      // For now, it will show an empty state or be explicitly managed elsewhere.
+      // Setting to empty based on removal of initialTableStatuses.
+      setTableStatuses([]);
     }
   }, []);
 
@@ -127,8 +120,8 @@ export default function DashboardPage() {
   const summaryCards = [
     { title: "Today's Sales", value: `$${todaysSales.toFixed(2)}`, icon: DollarSign, isStatic: false, change: "", changeType: "neutral" as const },
     { title: "Open Checks", value: openChecksCount.toString(), icon: Layers, isStatic: false, change: "", changeType: "neutral" as const },
-    { title: "Total Orders", value: totalOrdersCount.toString(), icon: ShoppingBag, isStatic: false, change: "", changeType: "neutral" as const }, // This is ALL orders
-    { title: "Covers Served", value: coversServed.toString(), icon: Users, isStatic: false, change: "", changeType: "neutral" as const }, // This is completed/paid orders
+    { title: "Total Orders", value: totalOrdersCount.toString(), icon: ShoppingBag, isStatic: false, change: "", changeType: "neutral" as const }, 
+    { title: "Covers Served", value: coversServed.toString(), icon: Users, isStatic: false, change: "", changeType: "neutral" as const },
   ];
 
 
@@ -165,18 +158,22 @@ export default function DashboardPage() {
         <Card className="lg:col-span-2 shadow-sm hover:shadow-md transition-shadow">
           <CardHeader>
             <CardTitle>Table Status</CardTitle>
-            <CardDescription>Quick view of current table occupancy.</CardDescription>
+            <CardDescription>Quick view of current table occupancy. (Table data managed on Tables page)</CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-            {tableStatuses.slice(0,8).map(table => (
-              <Link key={table.id} href={`/order/${table.id.toLowerCase()}`} passHref>
-                <Button variant="outline" className={`h-24 w-full flex flex-col items-center justify-center p-2 shadow-sm hover:shadow-lg transition-all border-2 ${table.status === 'Available' ? 'border-green-500 hover:bg-green-50' : table.status === 'Occupied' ? 'border-red-500 hover:bg-red-50' : 'border-gray-300 hover:bg-gray-50'}`}>
-                  <span className="text-lg font-semibold">{table.id}</span>
-                  <span className="text-xs text-muted-foreground">{table.status}</span>
-                  {table.status === 'Occupied' && <span className="text-xs">{table.items} items</span>}
-                </Button>
-              </Link>
-            ))}
+            {tableStatuses.length === 0 ? (
+              <p className="text-muted-foreground col-span-full text-center py-4">Table status information is managed on the Tables page. No active table data displayed here.</p>
+            ) : (
+              tableStatuses.slice(0,8).map(table => (
+                <Link key={table.id} href={`/order/${table.id.toLowerCase()}`} passHref>
+                  <Button variant="outline" className={`h-24 w-full flex flex-col items-center justify-center p-2 shadow-sm hover:shadow-lg transition-all border-2 ${table.status === 'Available' ? 'border-green-500 hover:bg-green-50' : table.status === 'Occupied' ? 'border-red-500 hover:bg-red-50' : 'border-gray-300 hover:bg-gray-50'}`}>
+                    <span className="text-lg font-semibold">{table.id}</span>
+                    <span className="text-xs text-muted-foreground">{table.status}</span>
+                    {table.status === 'Occupied' && <span className="text-xs">{table.items} items</span>}
+                  </Button>
+                </Link>
+              ))
+            )}
           </CardContent>
            <CardContent className="mt-2 text-right">
              <Link href="/tables" passHref>
@@ -205,7 +202,7 @@ export default function DashboardPage() {
        <Card className="shadow-sm hover:shadow-md transition-shadow">
         <CardHeader>
           <CardTitle>Promotions & Specials</CardTitle>
-          <CardDescription>Today's featured items and offers.</CardDescription>
+          <CardDescription>Featured items from your menu.</CardDescription>
         </CardHeader>
         <CardContent className="grid md:grid-cols-2 gap-4">
           {promotionalItems.map((item, index) => (
@@ -224,7 +221,7 @@ export default function DashboardPage() {
             </div>
           ))}
           {promotionalItems.length === 0 && (
-             <p className="text-muted-foreground md:col-span-2 text-center py-4">No special promotions currently. Check the menu!</p>
+             <p className="text-muted-foreground md:col-span-2 text-center py-4">No special promotions available. Add items to the menu to see them here.</p>
           )}
            {promotionalItems.length === 1 && ( 
             <div className="relative aspect-video rounded-lg overflow-hidden group border-2 border-dashed border-muted-foreground/50 flex items-center justify-center">

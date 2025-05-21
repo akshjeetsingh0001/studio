@@ -32,27 +32,23 @@ interface Category {
   itemCount: number;
 }
 
+interface ModifierGroup {
+  id: string;
+  name: string;
+  items: string[];
+}
+
 const USER_MENU_ITEMS_KEY = 'dineSwiftMenuItems';
 
-// Initial Mock data for menu items - will be used if localStorage is empty
-const initialMockMenuItems: MenuItem[] = [
-  { id: 'ITEM001', name: 'Classic Burger', category: 'Main Course', price: 12.99, availability: true, imageUrl: 'https://placehold.co/100x100.png', description: 'A juicy beef patty with lettuce, tomato, and our special sauce.' },
-  { id: 'ITEM002', name: 'Caesar Salad', category: 'Appetizers', price: 8.50, availability: true, imageUrl: 'https://placehold.co/100x100.png', description: 'Crisp romaine lettuce, croutons, Parmesan cheese, and Caesar dressing.' },
-  { id: 'ITEM003', name: 'Margherita Pizza', category: 'Main Course', price: 15.00, availability: true, imageUrl: 'https://placehold.co/100x100.png', description: 'Classic pizza with tomato, mozzarella, and basil.' },
-  { id: 'ITEM004', name: 'French Fries', category: 'Sides', price: 4.50, availability: false, imageUrl: 'https://placehold.co/100x100.png', description: 'Crispy golden french fries.' },
-  { id: 'ITEM005', name: 'Coca-Cola', category: 'Drinks', price: 2.50, availability: true, imageUrl: 'https://placehold.co/100x100.png', description: 'Refreshing Coca-Cola.' },
-  { id: 'ITEM006', name: 'Chocolate Lava Cake', category: 'Desserts', price: 7.00, availability: true, imageUrl: 'https://placehold.co/100x100.png', description: 'Warm chocolate cake with a gooey molten center.' },
-];
+// Initial Mock data for menu items - removed to rely on localStorage or start empty.
+const initialMockMenuItems: MenuItem[] = []; 
+const initialMockModifiers: ModifierGroup[] = [];
 
-const mockModifiers = [
-  { id: 'MOD01', name: 'Cheese Options', items: ['Cheddar', 'Swiss', 'Pepper Jack'] },
-  { id: 'MOD02', name: 'Burger Doneness', items: ['Rare', 'Medium Rare', 'Medium', 'Well Done'] },
-  { id: 'MOD03', name: 'Salad Dressing', items: ['Ranch', 'Italian', 'Vinaigrette'] },
-];
 
 export default function MenuManagementPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [modifiers, setModifiers] = useState<ModifierGroup[]>(initialMockModifiers);
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
@@ -67,18 +63,20 @@ export default function MenuManagementPage() {
       try {
         const savedItemsRaw = localStorage.getItem(USER_MENU_ITEMS_KEY);
         if (savedItemsRaw) {
-          setMenuItems(JSON.parse(savedItemsRaw));
+          const parsedItems = JSON.parse(savedItemsRaw);
+          // Ensure parsedItems is an array before setting
+          setMenuItems(Array.isArray(parsedItems) ? parsedItems : []);
         } else {
-          // If nothing in localStorage, use initial mocks and save them
-          setMenuItems(initialMockMenuItems);
-          updateLocalStorage(initialMockMenuItems);
+          // If nothing in localStorage, start with an empty array
+          setMenuItems([]);
+          updateLocalStorage([]); // Save empty array to localStorage
         }
       } catch (e) {
         console.error("Failed to load menu items from localStorage", e);
-        setMenuItems(initialMockMenuItems); // Fallback
+        setMenuItems([]); // Fallback to empty array
       }
     } else {
-        setMenuItems(initialMockMenuItems); // Fallback for SSR or non-browser
+        setMenuItems([]); // Fallback for SSR or non-browser
     }
   }, []);
 
@@ -194,7 +192,7 @@ export default function MenuManagementPage() {
         <TabsList className="grid w-full grid-cols-3 md:w-[500px]">
           <TabsTrigger value="items">All Items ({filteredMenuItems.length})</TabsTrigger>
           <TabsTrigger value="categories">Categories ({categories.length})</TabsTrigger>
-          <TabsTrigger value="modifiers">Modifiers ({mockModifiers.length})</TabsTrigger>
+          <TabsTrigger value="modifiers">Modifiers ({modifiers.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="items">
@@ -317,7 +315,7 @@ export default function MenuManagementPage() {
               </Button>
             </CardHeader>
             <CardContent>
-              {mockModifiers.length > 0 ? (
+              {modifiers.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -327,7 +325,7 @@ export default function MenuManagementPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockModifiers.map((modifier) => (
+                    {modifiers.map((modifier) => (
                       <TableRow key={modifier.id} className="hover:bg-muted/50">
                         <TableCell className="font-medium">{modifier.name}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">

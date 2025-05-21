@@ -1,3 +1,4 @@
+
 import type React from 'react';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Save, Undo, Users, CreditCard, Printer,Percent } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from '@/lib/utils';
 
 export default function SettingsPage() {
   return (
@@ -42,7 +44,7 @@ export default function SettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Label htmlFor="restaurantName">Restaurant Name</Label>
-                  <Input id="restaurantName" defaultValue="DineSwift Bistro" />
+                  <Input id="restaurantName" defaultValue="Seera Bistro" />
                 </div>
                 <div>
                   <Label htmlFor="currency">Currency</Label>
@@ -185,4 +187,5 @@ export default function SettingsPage() {
   );
 }
 
+// Using a local PlusCircle to avoid import issues if not globally available or if specific styling is needed
 const PlusCircle = ({className}: {className?: string}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={cn("h-5 w-5",className)}><path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 9a.75.75 0 0 0-1.5 0v2.25H9a.75.75 0 0 0 0 1.5h2.25V15a.75.75 0 0 0 1.5 0v-2.25H15a.75.75 0 0 0 0-1.5h-2.25V9Z" clipRule="evenodd" /></svg>;

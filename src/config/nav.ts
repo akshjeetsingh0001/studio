@@ -1,5 +1,6 @@
+
 import type { LucideIcon } from 'lucide-react';
-import { Home, ShoppingCart, LayoutGrid, UtensilsCrossed, BarChart3, Settings, LogOut, Users, Ticket } from 'lucide-react';
+import { Home, ShoppingCart, LayoutGrid, UtensilsCrossed, BarChart3, Settings, Users, Cookie } from 'lucide-react';
 
 export interface NavItem {
   title: string;
@@ -17,7 +18,7 @@ export interface NavItemGroup {
 }
 
 export const siteConfig = {
-  name: "DineSwift POS",
+  name: "Seera",
   description: "Modern Point of Sale system for restaurants.",
 };
 
@@ -25,8 +26,10 @@ export const primaryNavItems: NavItemGroup[] = [
   {
     items: [
       { title: "Dashboard", href: "/dashboard", icon: Home },
+      { title: "New Order", href: "/order/new", icon: UtensilsCrossed },
       { title: "Orders", href: "/orders", icon: ShoppingCart },
       { title: "Tables", href: "/tables", icon: LayoutGrid },
+      { title: "Kitchen", href: "/kitchen", icon: Cookie },
     ],
   },
   {
@@ -46,3 +49,5 @@ export const secondaryNavItems: NavItemGroup[] = [
     ]
   }
 ];
+
+    
