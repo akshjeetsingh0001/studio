@@ -8,9 +8,11 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { RefreshCw, Check, ChefHat, CheckCheck, AlertTriangle } from 'lucide-react';
+import { RefreshCw, Check, ChefHat, CheckCheck, AlertTriangle, LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { OrderItem } from '@/app/(app)/order/[id]/page';
+import { useAuth } from '@/contexts/AuthContext';
+import { Badge } from '@/components/ui/badge';
 
 const USER_SAVED_ORDERS_KEY = 'dineSwiftUserSavedOrders';
 const KDS_REFRESH_INTERVAL = 5000; // 5 seconds
@@ -30,6 +32,7 @@ export default function KitchenDisplayPage() {
   const [kitchenOrders, setKitchenOrders] = useState<StoredOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const { logout } = useAuth();
 
   const loadKitchenOrders = useCallback(() => {
     setIsLoading(true);
@@ -39,17 +42,15 @@ export default function KitchenDisplayPage() {
         const allOrders: StoredOrder[] = savedOrdersRaw ? JSON.parse(savedOrdersRaw) : [];
         const filtered = allOrders.filter(order => relevantStatuses.includes(order.status));
         
-        // Sort by time, newest first for Active/Pending, oldest for Preparing/Ready
         filtered.sort((a, b) => {
             const timeA = new Date(`1970/01/01 ${a.time}`).getTime();
             const timeB = new Date(`1970/01/01 ${b.time}`).getTime();
             if (['Active', 'PendingPayment'].includes(a.status) && ['Active', 'PendingPayment'].includes(b.status)) {
-                return timeB - timeA; // Newest active orders first
+                return timeB - timeA; 
             }
             if (['Preparing', 'Ready'].includes(a.status) && ['Preparing', 'Ready'].includes(b.status)) {
-                return timeA - timeB; // Oldest preparing/ready orders first (FIFO)
+                return timeA - timeB; 
             }
-            // Prioritize Active/PendingPayment over Preparing/Ready if mixed
             if (relevantStatuses.indexOf(a.status) < relevantStatuses.indexOf(b.status, 2)) return -1;
             if (relevantStatuses.indexOf(b.status) < relevantStatuses.indexOf(a.status, 2)) return 1;
 
@@ -81,9 +82,9 @@ export default function KitchenDisplayPage() {
 
         if (orderIndex > -1) {
           allOrders[orderIndex].status = newStatus;
-          allOrders[orderIndex].time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }); // Update time
+          allOrders[orderIndex].time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }); 
           localStorage.setItem(USER_SAVED_ORDERS_KEY, JSON.stringify(allOrders));
-          loadKitchenOrders(); // Refresh the display
+          loadKitchenOrders(); 
           toast({
             title: `Order ${orderId} Updated`,
             description: `Status changed to ${newStatus}.`,
@@ -120,10 +121,16 @@ export default function KitchenDisplayPage() {
   return (
     <div className="h-screen flex flex-col bg-muted/30 p-4">
       <PageHeader title="Kitchen Display System" description="Live view of incoming and active orders.">
-        <Button variant="outline" onClick={loadKitchenOrders} disabled={isLoading}>
-          <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={loadKitchenOrders} disabled={isLoading}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <Button variant="outline" onClick={logout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Log Out
+          </Button>
+        </div>
       </PageHeader>
       <div className="text-center mb-4 p-2 bg-yellow-100 border border-yellow-300 rounded-md text-yellow-700">
         <AlertTriangle className="inline-block mr-2 h-5 w-5" />
@@ -149,7 +156,22 @@ export default function KitchenDisplayPage() {
                     <span>{order.table}</span>
                     <span>{order.time}</span>
                   </div>
-                   <Badge variant={order.status === 'Active' || order.status === 'PendingPayment' ? 'default' : order.status === 'Preparing' ? 'destructive' : 'secondary'} className="mt-1 w-fit self-start">
+                   <Badge 
+                     variant={
+                        order.status === 'Active' || order.status === 'PendingPayment' 
+                        ? 'default' 
+                        : order.status === 'Preparing' 
+                        ? 'destructive' 
+                        : order.status === 'Ready'
+                        ? 'secondary'
+                        : 'outline' // Fallback
+                     } 
+                     className={`mt-1 w-fit self-start ${
+                        order.status === 'Active' || order.status === 'PendingPayment' ? 'bg-white text-blue-600 border-blue-600' :
+                        order.status === 'Preparing' ? 'bg-white text-orange-600 border-orange-600' :
+                        order.status === 'Ready' ? 'bg-white text-green-600 border-green-600' : ''
+                     }`}
+                    >
                     {order.status}
                   </Badge>
                 </CardHeader>
@@ -180,5 +202,3 @@ export default function KitchenDisplayPage() {
     </div>
   );
 }
-
-    
