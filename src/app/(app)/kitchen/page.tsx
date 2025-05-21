@@ -57,15 +57,14 @@ export default function KitchenDisplayPage() {
             const priorityA = statusOrderPriority[a.status as keyof typeof statusOrderPriority] ?? 99;
             const priorityB = statusOrderPriority[b.status as keyof typeof statusOrderPriority] ?? 99;
 
-            if (priorityA !== priorityB) {
+            if (priorityA === 1 && priorityB === 1) { // For Active/PendingPayment, newest first
+                 return timeB - timeA; 
+            }
+            if (priorityA !== priorityB) { // Primary sort by status group
                 return priorityA - priorityB; 
             }
-
-            if (priorityA === 1) { 
-                return timeB - timeA; 
-            } else { 
-                return timeA - timeB; 
-            }
+            // For Preparing, Ready, Paid, oldest first (FIFO)
+            return timeA - timeB; 
         });
         setKitchenOrders(filtered);
       } catch (e) {
@@ -144,9 +143,14 @@ export default function KitchenDisplayPage() {
           </Button>
         </div>
       </PageHeader>
-      <div className="text-center mb-4 p-2 bg-yellow-100 border border-yellow-300 rounded-md text-yellow-800">
-        <AlertTriangle className="inline-block mr-2 h-5 w-5" />
-        <strong>Note:</strong> This KDS prototype uses browser `localStorage`. For true multi-device functionality, a backend database and real-time updates would be required. Orders will only sync if managed in the same browser.
+      <div className="mb-4 p-3 text-sm bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-md shadow-sm">
+        <div className="flex items-start">
+          <AlertTriangle className="h-5 w-5 mr-2.5 mt-0.5 text-yellow-600 flex-shrink-0" />
+          <div>
+            <strong className="font-semibold">Important Note:</strong> This KDS prototype uses browser `localStorage` for data. 
+            Orders will only appear here if managed in the same browser on this device. For live, multi-device synchronization (e.g., between a POS tablet and a separate kitchen screen), a backend database with real-time update capabilities is required.
+          </div>
+        </div>
       </div>
 
       {isLoading && kitchenOrders.length === 0 ? (
@@ -166,8 +170,8 @@ export default function KitchenDisplayPage() {
                     order.status === 'Active' || order.status === 'PendingPayment' ? 'bg-blue-500' : 
                     order.status === 'Preparing' ? 'bg-orange-500' : 
                     order.status === 'Ready' ? 'bg-green-500' : 
-                    order.status === 'Paid' ? 'bg-indigo-500' : // Paid status header color
-                    'bg-gray-400' // Fallback
+                    order.status === 'Paid' ? 'bg-indigo-500' :
+                    'bg-gray-400'
                   }`}>
                   <CardTitle className="text-2xl font-bold">Order: {order.id}</CardTitle>
                   <div className="flex justify-between text-sm">
@@ -180,7 +184,7 @@ export default function KitchenDisplayPage() {
                         order.status === 'Active' || order.status === 'PendingPayment' ? 'text-blue-600 border-blue-600' :
                         order.status === 'Preparing' ? 'text-orange-600 border-orange-600' :
                         order.status === 'Ready' ? 'text-green-600 border-green-600' :
-                        order.status === 'Paid' ? 'text-indigo-600 border-indigo-600' : // Paid status badge color
+                        order.status === 'Paid' ? 'text-indigo-600 border-indigo-600' :
                         'text-gray-600 border-gray-600'
                      }`}
                     >
