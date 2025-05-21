@@ -26,7 +26,7 @@ interface StoredOrder {
   orderDetails?: OrderItem[];
 }
 
-const relevantStatuses = ['Active', 'PendingPayment', 'Preparing', 'Ready'];
+const relevantStatuses = ['Active', 'PendingPayment', 'Preparing', 'Ready', 'Paid'];
 
 export default function KitchenDisplayPage() {
   const [kitchenOrders, setKitchenOrders] = useState<StoredOrder[]>([]);
@@ -40,21 +40,31 @@ export default function KitchenDisplayPage() {
       try {
         const savedOrdersRaw = localStorage.getItem(USER_SAVED_ORDERS_KEY);
         const allOrders: StoredOrder[] = savedOrdersRaw ? JSON.parse(savedOrdersRaw) : [];
-        const filtered = allOrders.filter(order => relevantStatuses.includes(order.status));
+        let filtered = allOrders.filter(order => relevantStatuses.includes(order.status));
         
+        const statusOrderPriority = { 
+          'Active': 1, 
+          'PendingPayment': 1, 
+          'Preparing': 2, 
+          'Ready': 3,
+          'Paid': 4 
+        };
+
         filtered.sort((a, b) => {
             const timeA = new Date(`1970/01/01 ${a.time}`).getTime();
             const timeB = new Date(`1970/01/01 ${b.time}`).getTime();
-            if (['Active', 'PendingPayment'].includes(a.status) && ['Active', 'PendingPayment'].includes(b.status)) {
-                return timeB - timeA; 
-            }
-            if (['Preparing', 'Ready'].includes(a.status) && ['Preparing', 'Ready'].includes(b.status)) {
-                return timeA - timeB; 
-            }
-            if (relevantStatuses.indexOf(a.status) < relevantStatuses.indexOf(b.status, 2)) return -1;
-            if (relevantStatuses.indexOf(b.status) < relevantStatuses.indexOf(a.status, 2)) return 1;
 
-            return timeB - timeA; 
+            const priorityA = statusOrderPriority[a.status as keyof typeof statusOrderPriority] ?? 99;
+            const priorityB = statusOrderPriority[b.status as keyof typeof statusOrderPriority] ?? 99;
+
+            if (priorityA === 1 && priorityB === 1) { // For Active/PendingPayment, newest first
+                 return timeB - timeA; 
+            }
+            if (priorityA !== priorityB) { // Primary sort by status group
+                return priorityA - priorityB; 
+            }
+            // For Preparing, Ready, Paid, oldest first (FIFO)
+            return timeA - timeB; 
         });
         setKitchenOrders(filtered);
       } catch (e) {
@@ -115,7 +125,8 @@ export default function KitchenDisplayPage() {
         </Button>
       );
     }
-    return null;
+    // No actions for 'Ready' or 'Paid' orders on KDS itself; completion is handled on Orders page
+    return null; 
   };
 
   return (
@@ -132,9 +143,14 @@ export default function KitchenDisplayPage() {
           </Button>
         </div>
       </PageHeader>
-      <div className="text-center mb-4 p-2 bg-yellow-100 border border-yellow-300 rounded-md text-yellow-700">
-        <AlertTriangle className="inline-block mr-2 h-5 w-5" />
-        <strong>Note:</strong> This KDS prototype uses browser `localStorage`. For true multi-device functionality, a backend database and real-time updates would be required. Orders will only sync if managed in the same browser.
+      <div className="mb-4 p-3 text-sm bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-md shadow-sm">
+        <div className="flex items-start">
+          <AlertTriangle className="h-5 w-5 mr-2.5 mt-0.5 text-yellow-600 flex-shrink-0" />
+          <div>
+            <strong className="font-semibold">Important Note:</strong> This KDS prototype uses browser `localStorage` for data. 
+            Orders will only appear here if managed in the same browser on this device. For live, multi-device synchronization (e.g., between a POS tablet and a separate kitchen screen), a backend database with real-time update capabilities is required.
+          </div>
+        </div>
       </div>
 
       {isLoading && kitchenOrders.length === 0 ? (
@@ -150,26 +166,26 @@ export default function KitchenDisplayPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {kitchenOrders.map((order) => (
               <Card key={order.id} className="shadow-lg flex flex-col bg-card">
-                <CardHeader className={`p-4 ${order.status === 'Active' || order.status === 'PendingPayment' ? 'bg-blue-500 text-white' : order.status === 'Preparing' ? 'bg-orange-500 text-white' : 'bg-green-500 text-white'}`}>
-                  <CardTitle className="text-xl font-bold">Order: {order.id}</CardTitle>
+                <CardHeader className={`p-4 text-white ${
+                    order.status === 'Active' || order.status === 'PendingPayment' ? 'bg-blue-500' : 
+                    order.status === 'Preparing' ? 'bg-orange-500' : 
+                    order.status === 'Ready' ? 'bg-green-500' : 
+                    order.status === 'Paid' ? 'bg-indigo-500' :
+                    'bg-gray-400'
+                  }`}>
+                  <CardTitle className="text-2xl font-bold">Order: {order.id}</CardTitle>
                   <div className="flex justify-between text-sm">
                     <span>{order.table}</span>
                     <span>{order.time}</span>
                   </div>
                    <Badge 
-                     variant={
-                        order.status === 'Active' || order.status === 'PendingPayment' 
-                        ? 'default' 
-                        : order.status === 'Preparing' 
-                        ? 'destructive' 
-                        : order.status === 'Ready'
-                        ? 'secondary'
-                        : 'outline' // Fallback
-                     } 
-                     className={`mt-1 w-fit self-start ${
-                        order.status === 'Active' || order.status === 'PendingPayment' ? 'bg-white text-blue-600 border-blue-600' :
-                        order.status === 'Preparing' ? 'bg-white text-orange-600 border-orange-600' :
-                        order.status === 'Ready' ? 'bg-white text-green-600 border-green-600' : ''
+                     variant="secondary" 
+                     className={`mt-1 w-fit self-start bg-white border ${
+                        order.status === 'Active' || order.status === 'PendingPayment' ? 'text-blue-600 border-blue-600' :
+                        order.status === 'Preparing' ? 'text-orange-600 border-orange-600' :
+                        order.status === 'Ready' ? 'text-green-600 border-green-600' :
+                        order.status === 'Paid' ? 'text-indigo-600 border-indigo-600' :
+                        'text-gray-600 border-gray-600'
                      }`}
                     >
                     {order.status}
@@ -181,7 +197,7 @@ export default function KitchenDisplayPage() {
                       {order.orderDetails.map((item, index) => (
                         <li key={`${item.id}-${index}`} className="flex justify-between border-b border-border pb-1">
                           <span className="font-medium">{item.name}</span>
-                          <span className="text-muted-foreground">x {item.quantity}</span>
+                          <span className="text-muted-foreground font-semibold">x {item.quantity}</span>
                         </li>
                       ))}
                     </ul>
@@ -202,3 +218,4 @@ export default function KitchenDisplayPage() {
     </div>
   );
 }
+
