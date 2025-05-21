@@ -22,12 +22,12 @@ const initialMockOrders: MockOrder[] = [];
 interface MockOrder {
   id: string;
   table: string;
-  items: number;
+  items: number; // This property will remain in the interface, but not be displayed
   total: number;
   status: string;
-  server: string;
+  server: string; // This property will remain in the interface, but not be displayed
   time: string;
-  orderDetails?: OrderItem[]; 
+  orderDetails?: OrderItem[];
 }
 
 const USER_SAVED_ORDERS_KEY = 'dineSwiftUserSavedOrders';
@@ -37,10 +37,10 @@ const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destr
     case 'active':
     case 'preparing':
     case 'pendingpayment':
-      return 'default'; 
+      return 'default';
     case 'paid':
     case 'completed':
-      return 'secondary'; 
+      return 'secondary';
     case 'cancelled':
       return 'destructive';
     default:
@@ -49,15 +49,15 @@ const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destr
 };
 
 const parseTime = (timeStr: string): number => {
-  if (!timeStr) return Date.now(); 
+  if (!timeStr) return Date.now();
   const [time, modifier] = timeStr.split(' ');
-  if (!time || !modifier) return Date.now(); 
+  if (!time || !modifier) return Date.now();
   let [hours, minutes] = time.split(':').map(Number);
-  if (isNaN(hours) || isNaN(minutes)) return Date.now(); 
+  if (isNaN(hours) || isNaN(minutes)) return Date.now();
 
   if (modifier.toUpperCase() === 'PM' && hours < 12) hours += 12;
-  if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0; 
-  
+  if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0;
+
   const date = new Date();
   date.setHours(hours, minutes, 0, 0);
   return date.getTime();
@@ -132,23 +132,23 @@ export default function OrdersPage() {
   const filterAndSortOrders = (orders: MockOrder[], filterTerm: string, sortActive: boolean = false) => {
     let filtered = orders;
     if (filterTerm) {
-      filtered = orders.filter(order => 
+      filtered = orders.filter(order =>
         order.id.toLowerCase().includes(filterTerm.toLowerCase()) ||
         order.table.toLowerCase().includes(filterTerm.toLowerCase()) ||
-        order.server.toLowerCase().includes(filterTerm.toLowerCase()) ||
+        order.server.toLowerCase().includes(filterTerm.toLowerCase()) || // Server still used for search
         order.status.toLowerCase().includes(filterTerm.toLowerCase())
       );
     }
     // Sort by time, newest first for all tabs for consistency
     return filtered.sort((a, b) => parseTime(b.time) - parseTime(a.time));
   };
-  
+
   const activeOrders = filterAndSortOrders(
     allOrders.filter(order => ['Active', 'Preparing', 'PendingPayment'].includes(order.status)),
     searchTerm,
-    true 
+    true
   );
-  
+
   const completedOrders = filterAndSortOrders(
     allOrders.filter(order => ['Paid', 'Completed', 'Cancelled'].includes(order.status)),
     searchTerm
@@ -156,16 +156,16 @@ export default function OrdersPage() {
 
 
   return (
-    <TooltipProvider> 
+    <TooltipProvider>
       <div className="space-y-6">
         <PageHeader title="Orders" description="Manage and view all customer orders.">
           <div className="flex items-center gap-2">
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                type="search" 
-                placeholder="Search orders..." 
-                className="pl-8 sm:w-[300px]" 
+              <Input
+                type="search"
+                placeholder="Search orders..."
+                className="pl-8 sm:w-[300px]"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -190,8 +190,8 @@ export default function OrdersPage() {
                 <CardDescription>Orders currently in progress, being prepared, or pending payment. Sorted by newest first.</CardDescription>
               </CardHeader>
               <CardContent>
-                <OrderTable 
-                  orders={activeOrders} 
+                <OrderTable
+                  orders={activeOrders}
                   onMarkAsPaid={handleMarkAsPaid}
                   onDeleteOrder={handleDeleteOrder}
                   isActiveTab={true}
@@ -206,11 +206,11 @@ export default function OrdersPage() {
                 <CardDescription>Orders that have been paid, completed, or cancelled.</CardDescription>
               </CardHeader>
               <CardContent>
-                <OrderTable 
-                  orders={completedOrders} 
-                  onMarkAsPaid={() => {}} 
+                <OrderTable
+                  orders={completedOrders}
+                  onMarkAsPaid={() => {}}
                   onDeleteOrder={handleDeleteOrder}
-                  isActiveTab={false} 
+                  isActiveTab={false}
                 />
               </CardContent>
             </Card>
@@ -246,10 +246,10 @@ function OrderTable({ orders, onMarkAsPaid, onDeleteOrder, isActiveTab }: OrderT
         <TableRow>
           <TableHead>Order ID</TableHead>
           <TableHead>Table/Type</TableHead>
-          <TableHead className="text-center">Items</TableHead>
+          {/* <TableHead className="text-center">Items</TableHead> // Removed Items column header */}
           <TableHead className="text-right">Total</TableHead>
           <TableHead>Status</TableHead>
-          <TableHead>Server</TableHead>
+          {/* <TableHead>Server</TableHead> // Removed Server column header */}
           <TableHead>Time</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
@@ -259,12 +259,12 @@ function OrderTable({ orders, onMarkAsPaid, onDeleteOrder, isActiveTab }: OrderT
           <TableRow key={order.id} className="hover:bg-muted/50">
             <TableCell className="font-medium">{order.id}</TableCell>
             <TableCell>{order.table}</TableCell>
-            <TableCell className="text-center">{order.items}</TableCell>
+            {/* <TableCell className="text-center">{order.items}</TableCell> // Removed Items cell */}
             <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
             <TableCell>
               <Badge variant={getStatusBadgeVariant(order.status)}>{order.status}</Badge>
             </TableCell>
-            <TableCell>{order.server}</TableCell>
+            {/* <TableCell>{order.server}</TableCell> // Removed Server cell */}
             <TableCell>{order.time}</TableCell>
             <TableCell className="text-right space-x-1">
               <Tooltip>
@@ -292,7 +292,7 @@ function OrderTable({ orders, onMarkAsPaid, onDeleteOrder, isActiveTab }: OrderT
                   </TooltipContent>
                 </Tooltip>
               )}
-              
+
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="ghost" size="icon" onClick={() => onDeleteOrder(order.id)} className="text-destructive hover:text-destructive/80">
