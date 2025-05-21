@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import type React from 'react';
@@ -11,24 +10,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardTitle, CardContent, CardDescription, CardHeader } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import { PlusCircle, MinusCircle, Trash2, ShoppingCart, Zap, Lightbulb, DollarSign, CreditCard, AlertTriangle, FolderOpen } from 'lucide-react';
+import { PlusCircle, MinusCircle, Trash2, ShoppingCart, Zap, Lightbulb, DollarSign, CreditCard, AlertTriangle } from 'lucide-react';
 import { getUpsellSuggestions, type GetUpsellSuggestionsInput } from '@/ai/flows/upsell-suggestions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Fallback menu items if localStorage is empty
-const initialMockMenuItemsForOrderPage = [
-  { id: 'ITEM001', name: 'Classic Burger', category: 'Main Course', price: 12.99, imageUrl: 'https://placehold.co/150x100.png', description: 'A juicy beef patty with lettuce, tomato, and our special sauce.', availability: true, 'data-ai-hint': 'burger food' },
-  { id: 'ITEM002', name: 'Caesar Salad', category: 'Appetizers', price: 8.50, imageUrl: 'https://placehold.co/150x100.png', description: 'Crisp romaine lettuce, croutons, Parmesan cheese, and Caesar dressing.', availability: true, 'data-ai-hint': 'salad food' },
-  { id: 'ITEM003', name: 'Margherita Pizza', category: 'Main Course', price: 15.00, imageUrl: 'https://placehold.co/150x100.png', description: 'Classic pizza with tomato, mozzarella, and basil.', availability: true, 'data-ai-hint': 'pizza food' },
-  { id: 'ITEM004', name: 'French Fries', category: 'Sides', price: 4.50, imageUrl: 'https://placehold.co/150x100.png', description: 'Crispy golden french fries.', availability: true, 'data-ai-hint': 'fries side' },
-  { id: 'ITEM005', name: 'Coca-Cola', category: 'Drinks', price: 2.50, imageUrl: 'https://placehold.co/150x100.png', description: 'Refreshing Coca-Cola.', availability: true, 'data-ai-hint': 'soda drink' },
-  { id: 'ITEM006', name: 'Chocolate Lava Cake', category: 'Desserts', price: 7.00, imageUrl: 'https://placehold.co/150x100.png', description: 'Warm chocolate cake with a gooey molten center.', availability: false, 'data-ai-hint': 'cake dessert' }, // Example of unavailable item
-  { id: 'ITEM007', name: 'Chicken Wings', category: 'Appetizers', price: 10.50, imageUrl: 'https://placehold.co/150x100.png', description: 'Spicy and crispy chicken wings.', availability: true, 'data-ai-hint': 'wings appetizer' },
-  { id: 'ITEM008', name: 'Iced Tea', category: 'Drinks', price: 2.75, imageUrl: 'https://placehold.co/150x100.png', description: 'Freshly brewed iced tea.', availability: true, 'data-ai-hint': 'tea drink' },
-];
+// Fallback menu items - removed to rely on localStorage or start empty.
+const initialMockMenuItemsForOrderPage: MenuItem[] = [];
 
 interface MenuItem {
   id: string;
@@ -71,7 +60,7 @@ export default function OrderEntryPage() {
         if (savedItemsRaw) {
           const parsedItems = JSON.parse(savedItemsRaw);
           if (Array.isArray(parsedItems) && parsedItems.length > 0) {
-            setMenuItems(parsedItems.map((item: any) => ({ // Ensure structure consistency
+            setMenuItems(parsedItems.map((item: any) => ({ 
               id: item.id || `ITEM_UNKNOWN_${Math.random().toString(36).substr(2, 9)}`,
               name: item.name || 'Unknown Item',
               category: item.category || 'Uncategorized',
@@ -84,12 +73,15 @@ export default function OrderEntryPage() {
             return;
           }
         }
+         // If localStorage is empty or items are not an array, set empty menu.
+        setMenuItems([]);
       } catch (e) {
         console.error("Failed to load menu items from localStorage for order page", e);
+        setMenuItems([]); // Fallback to empty array on error
       }
+    } else {
+       setMenuItems([]); // Fallback for SSR or non-browser
     }
-    // Fallback if localStorage is empty or fails
-    setMenuItems(initialMockMenuItemsForOrderPage);
   }, []);
 
   useEffect(() => {
@@ -214,7 +206,7 @@ export default function OrderEntryPage() {
         category: item.category,
         imageUrl: item.imageUrl,
         description: item.description,
-        availability: item.availability, // ensure availability is saved
+        availability: item.availability, 
         'data-ai-hint': item['data-ai-hint'],
       })),
     };
@@ -532,4 +524,3 @@ export default function OrderEntryPage() {
     </div>
   );
 }
-

@@ -16,16 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { OrderItem } from '@/app/(app)/order/[id]/page'; // Import OrderItem type
 
-// Initial mock data for orders
-const initialMockOrders = [
-  { id: 'ORD001', table: 'T1', items: 3, total: 45.50, status: 'Active', server: 'Jane D.', time: '10:30 AM', orderDetails: [{ name: 'Classic Burger', quantity: 1, price: 12.99, id: 'ITEM001', category: 'Main Course', imageUrl: '', description: '' }, { name: 'French Fries', quantity: 2, price: 4.50, id: 'ITEM004', category: 'Sides', imageUrl: '', description: '' }] },
-  { id: 'ORD002', table: 'T5', items: 5, total: 82.00, status: 'Active', server: 'John S.', time: '10:35 AM', orderDetails: [] },
-  { id: 'ORD003', table: 'T2', items: 2, total: 25.00, status: 'Paid', server: 'Alice M.', time: '10:15 AM', orderDetails: [] },
-  { id: 'ORD004', table: 'T8', items: 4, total: 60.75, status: 'Preparing', server: 'Jane D.', time: '10:40 AM', orderDetails: [] },
-  { id: 'ORD005', table: 'T3', items: 1, total: 12.25, status: 'Completed', server: 'John S.', time: '09:50 AM', orderDetails: [] },
-  { id: 'ORD006', table: 'T6', items: 6, total: 105.00, status: 'Active', server: 'Alice M.', time: '10:42 AM', orderDetails: [] },
-  { id: 'ORD007', table: 'T10', items: 2, total: 33.50, status: 'Cancelled', server: 'Jane D.', time: '10:05 AM', orderDetails: [] },
-];
+// Initial mock data for orders - removed to rely on localStorage or start empty.
+const initialMockOrders: MockOrder[] = [];
 
 interface MockOrder {
   id: string;
@@ -35,7 +27,7 @@ interface MockOrder {
   status: string;
   server: string;
   time: string;
-  orderDetails?: OrderItem[]; // Added to store detailed items
+  orderDetails?: OrderItem[]; 
 }
 
 const USER_SAVED_ORDERS_KEY = 'dineSwiftUserSavedOrders';
@@ -57,7 +49,7 @@ const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destr
 };
 
 const parseTime = (timeStr: string): number => {
-  if (!timeStr) return Date.now(); // Fallback for undefined time
+  if (!timeStr) return Date.now(); 
   const [time, modifier] = timeStr.split(' ');
   if (!time || !modifier) return Date.now(); 
   let [hours, minutes] = time.split(':').map(Number);
@@ -66,7 +58,6 @@ const parseTime = (timeStr: string): number => {
   if (modifier.toUpperCase() === 'PM' && hours < 12) hours += 12;
   if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0; 
   
-  // Create a date object for today with this time to ensure correct sorting across days if needed
   const date = new Date();
   date.setHours(hours, minutes, 0, 0);
   return date.getTime();
@@ -89,32 +80,23 @@ export default function OrdersPage() {
         const savedOrdersRaw = localStorage.getItem(USER_SAVED_ORDERS_KEY);
         let loadedOrders: MockOrder[] = [];
 
-        // Create a map of initial orders to ensure they are included and can be updated
-        const initialOrdersMap = new Map<string, MockOrder>();
-        initialMockOrders.forEach(order => initialOrdersMap.set(order.id, { ...order }));
-
         if (savedOrdersRaw) {
-          const savedOrders: MockOrder[] = JSON.parse(savedOrdersRaw);
-          savedOrders.forEach(savedOrder => {
-            initialOrdersMap.set(savedOrder.id, savedOrder); // Add or overwrite with saved order
-          });
+          const parsedOrders = JSON.parse(savedOrdersRaw);
+          // Ensure parsedOrders is an array
+          loadedOrders = Array.isArray(parsedOrders) ? parsedOrders : [];
         }
-        loadedOrders = Array.from(initialOrdersMap.values());
         setAllOrders(loadedOrders);
       } catch (e) {
         console.error("Failed to load orders from localStorage", e);
-        setAllOrders([...initialMockOrders]); // Fallback to initial mock orders
+        setAllOrders([]); // Fallback to empty array
       }
     } else {
-        setAllOrders([...initialMockOrders]);
+        setAllOrders([]); // Fallback for SSR or non-browser
     }
   }, []);
 
   useEffect(() => {
     loadOrders();
-    // Optional: Set up an interval to refresh orders from localStorage if other tabs might change it
-    // const intervalId = setInterval(loadOrders, 5000); // Refresh every 5 seconds
-    // return () => clearInterval(intervalId);
   }, [loadOrders]);
 
 
@@ -157,10 +139,7 @@ export default function OrdersPage() {
         order.status.toLowerCase().includes(filterTerm.toLowerCase())
       );
     }
-    if (sortActive) { // Sort by time, newest first
-      return filtered.sort((a, b) => parseTime(b.time) - parseTime(a.time));
-    }
-    // For completed orders, could sort by time as well, or by ID
+    // Sort by time, newest first for all tabs for consistency
     return filtered.sort((a, b) => parseTime(b.time) - parseTime(a.time));
   };
   
@@ -177,7 +156,7 @@ export default function OrdersPage() {
 
 
   return (
-    <TooltipProvider> {/* Added TooltipProvider here */}
+    <TooltipProvider> 
       <div className="space-y-6">
         <PageHeader title="Orders" description="Manage and view all customer orders.">
           <div className="flex items-center gap-2">
@@ -256,7 +235,7 @@ function OrderTable({ orders, onMarkAsPaid, onDeleteOrder, isActiveTab }: OrderT
 
   const formatOrderDetailsTooltip = (orderDetails?: OrderItem[]): string => {
     if (!orderDetails || orderDetails.length === 0) {
-      return "No items detailed.";
+      return "No items detailed for this order.";
     }
     return orderDetails.map(item => `${item.quantity}x ${item.name}`).join(', ');
   };
@@ -291,7 +270,7 @@ function OrderTable({ orders, onMarkAsPaid, onDeleteOrder, isActiveTab }: OrderT
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Link href={`/order/${order.id.toLowerCase()}`} passHref>
-                    <Button variant="ghost" size="icon" title="View Order Details">
+                    <Button variant="ghost" size="icon">
                       <Eye className="h-4 w-4" />
                     </Button>
                   </Link>
@@ -304,7 +283,7 @@ function OrderTable({ orders, onMarkAsPaid, onDeleteOrder, isActiveTab }: OrderT
               {isActiveTab && ['Active', 'Preparing', 'PendingPayment'].includes(order.status) && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" title="Mark as Paid" onClick={() => onMarkAsPaid(order.id)}>
+                    <Button variant="ghost" size="icon" onClick={() => onMarkAsPaid(order.id)}>
                       <CheckCircle2 className="h-4 w-4 text-green-600" />
                     </Button>
                   </TooltipTrigger>
@@ -316,7 +295,7 @@ function OrderTable({ orders, onMarkAsPaid, onDeleteOrder, isActiveTab }: OrderT
               
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" title="Delete Order" onClick={() => onDeleteOrder(order.id)} className="text-destructive hover:text-destructive/80">
+                  <Button variant="ghost" size="icon" onClick={() => onDeleteOrder(order.id)} className="text-destructive hover:text-destructive/80">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
@@ -344,4 +323,3 @@ function OrderTable({ orders, onMarkAsPaid, onDeleteOrder, isActiveTab }: OrderT
     </Table>
   );
 }
-

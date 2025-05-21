@@ -45,17 +45,8 @@ interface KpiData {
   description?: string;
 }
 
-
-// Static mock data for Sales Over Time (remains static due to current order time format)
-const staticSalesOverTimeData = [
-  { date: '2024-07-01', sales: 1200, orders: 30 },
-  { date: '2024-07-02', sales: 1500, orders: 35 },
-  { date: '2024-07-03', sales: 1100, orders: 28 },
-  { date: '2024-07-04', sales: 1800, orders: 42 },
-  { date: '2024-07-05', sales: 1650, orders: 38 },
-  { date: '2024-07-06', sales: 2200, orders: 50 },
-  { date: '2024-07-07', sales: 2000, orders: 45 },
-];
+// Static mock data for Sales Over Time removed.
+const staticSalesOverTimeData: { date: string, sales: number, orders: number }[] = [];
 
 // Chart configurations
 const salesChartConfig = {
@@ -89,10 +80,10 @@ export default function ReportsPage() {
 
   const [dynamicTopSellingItems, setDynamicTopSellingItems] = useState<TopSellingItemData[]>([]);
   const [dynamicKpis, setDynamicKpis] = useState<KpiData[]>([
-    { title: "Average Order Value", value: "$0.00", isDynamic: true },
+    { title: "Average Order Value", value: "$0.00", isDynamic: true, description:"From completed orders" },
     { title: "Total Customers Served", value: "0", isDynamic: true, description:"Based on completed orders" },
-    { title: "New Customers", value: "23", isDynamic: false, description:"Mock data" }, // Static
-    { title: "Peak Hours", value: "7 PM - 9 PM", isDynamic: false, description:"Mock data" }, // Static
+    { title: "New Customers", value: "N/A", isDynamic: false, description:"Data not available" }, 
+    { title: "Peak Hours", value: "N/A", isDynamic: false, description:"Data not available" }, 
   ]);
 
   const loadAndProcessReportData = useCallback(() => {
@@ -126,18 +117,17 @@ export default function ReportsPage() {
         setDynamicKpis(prevKpis => prevKpis.map(kpi => {
           if (kpi.title === "Average Order Value") return { ...kpi, value: `$${averageOrderValue.toFixed(2)}` };
           if (kpi.title === "Total Customers Served") return { ...kpi, value: numberOfCompletedOrders.toString() };
-          return kpi; // Keep static KPIs as they are
+          return kpi; 
         }));
 
       } catch (e) {
         console.error("Failed to load or process report data from localStorage", e);
-        // Fallback to empty or default mock data for dynamic parts
         setDynamicTopSellingItems([]);
          setDynamicKpis([
-            { title: "Average Order Value", value: "$0.00", isDynamic: true },
+            { title: "Average Order Value", value: "$0.00", isDynamic: true, description:"From completed orders" },
             { title: "Total Customers Served", value: "0", isDynamic: true, description:"Based on completed orders" },
-            { title: "New Customers", value: "23", isDynamic: false, description:"Mock data" },
-            { title: "Peak Hours", value: "7 PM - 9 PM", isDynamic: false, description:"Mock data" },
+            { title: "New Customers", value: "N/A", isDynamic: false, description:"Data not available" },
+            { title: "Peak Hours", value: "N/A", isDynamic: false, description:"Data not available" },
         ]);
       }
     }
@@ -210,7 +200,7 @@ export default function ReportsPage() {
           <CardHeader>
             <CardTitle>Sales Over Time</CardTitle>
             <CardDescription>
-              Daily sales and order volume. (Demo data for selected period)
+              Daily sales and order volume. (Note: Chart requires historical data not currently stored.)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -226,7 +216,7 @@ export default function ReportsPage() {
                 <Line type="monotone" dataKey="orders" stroke="var(--color-orders)" strokeWidth={2} yAxisId="right" dot={false} />
               </LineChart>
             </ChartContainer>
-             {filteredSalesOverTimeData.length === 0 && <p className="text-center text-muted-foreground pt-4">No sales data for selected period.</p>}
+             {filteredSalesOverTimeData.length === 0 && <p className="text-center text-muted-foreground pt-4">No sales data available for the selected period.</p>}
           </CardContent>
         </Card>
 
@@ -264,7 +254,7 @@ export default function ReportsPage() {
           {dynamicKpis.map(kpi => (
             <Card key={kpi.title} className="bg-muted/50">
               <CardHeader className="pb-2">
-                 <CardDescription>{kpi.title} {!kpi.isDynamic && <span className="text-xs">(Mock)</span>}</CardDescription>
+                 <CardDescription>{kpi.title} {!kpi.isDynamic && <span className="text-xs">(Static/Unavailable)</span>}</CardDescription>
                  <CardTitle className="text-2xl">{kpi.value}</CardTitle>
                  {kpi.description && <p className="text-xs text-muted-foreground/70 pt-1">{kpi.description}</p>}
               </CardHeader>
@@ -275,6 +265,3 @@ export default function ReportsPage() {
     </div>
   );
 }
-
-
-    
