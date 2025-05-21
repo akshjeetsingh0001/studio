@@ -26,7 +26,7 @@ interface StoredOrder {
   orderDetails?: OrderItem[];
 }
 
-const relevantStatuses = ['Active', 'PendingPayment', 'Preparing', 'Ready'];
+const relevantStatuses = ['Active', 'PendingPayment', 'Preparing', 'Ready', 'Paid'];
 
 export default function KitchenDisplayPage() {
   const [kitchenOrders, setKitchenOrders] = useState<StoredOrder[]>([]);
@@ -42,12 +42,12 @@ export default function KitchenDisplayPage() {
         const allOrders: StoredOrder[] = savedOrdersRaw ? JSON.parse(savedOrdersRaw) : [];
         let filtered = allOrders.filter(order => relevantStatuses.includes(order.status));
         
-        // Refined sorting logic
         const statusOrderPriority = { 
           'Active': 1, 
           'PendingPayment': 1, 
           'Preparing': 2, 
-          'Ready': 3 
+          'Ready': 3,
+          'Paid': 4 
         };
 
         filtered.sort((a, b) => {
@@ -58,14 +58,13 @@ export default function KitchenDisplayPage() {
             const priorityB = statusOrderPriority[b.status as keyof typeof statusOrderPriority] ?? 99;
 
             if (priorityA !== priorityB) {
-                return priorityA - priorityB; // Sort by status group priority
+                return priorityA - priorityB; 
             }
 
-            // Within the same priority group, sort by time
-            if (priorityA === 1) { // Active or PendingPayment
-                return timeB - timeA; // Newest first
-            } else { // Preparing or Ready
-                return timeA - timeB; // Oldest first (FIFO)
+            if (priorityA === 1) { 
+                return timeB - timeA; 
+            } else { 
+                return timeA - timeB; 
             }
         });
         setKitchenOrders(filtered);
@@ -127,7 +126,8 @@ export default function KitchenDisplayPage() {
         </Button>
       );
     }
-    return null;
+    // No actions for 'Ready' or 'Paid' orders on KDS itself; completion is handled on Orders page
+    return null; 
   };
 
   return (
@@ -144,7 +144,7 @@ export default function KitchenDisplayPage() {
           </Button>
         </div>
       </PageHeader>
-      <div className="text-center mb-4 p-2 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-700">
+      <div className="text-center mb-4 p-2 bg-yellow-100 border border-yellow-300 rounded-md text-yellow-800">
         <AlertTriangle className="inline-block mr-2 h-5 w-5" />
         <strong>Note:</strong> This KDS prototype uses browser `localStorage`. For true multi-device functionality, a backend database and real-time updates would be required. Orders will only sync if managed in the same browser.
       </div>
@@ -162,18 +162,26 @@ export default function KitchenDisplayPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {kitchenOrders.map((order) => (
               <Card key={order.id} className="shadow-lg flex flex-col bg-card">
-                <CardHeader className={`p-4 text-white ${order.status === 'Active' || order.status === 'PendingPayment' ? 'bg-blue-500' : order.status === 'Preparing' ? 'bg-orange-500' : 'bg-green-500'}`}>
+                <CardHeader className={`p-4 text-white ${
+                    order.status === 'Active' || order.status === 'PendingPayment' ? 'bg-blue-500' : 
+                    order.status === 'Preparing' ? 'bg-orange-500' : 
+                    order.status === 'Ready' ? 'bg-green-500' : 
+                    order.status === 'Paid' ? 'bg-indigo-500' : // Paid status header color
+                    'bg-gray-400' // Fallback
+                  }`}>
                   <CardTitle className="text-2xl font-bold">Order: {order.id}</CardTitle>
                   <div className="flex justify-between text-sm">
                     <span>{order.table}</span>
                     <span>{order.time}</span>
                   </div>
                    <Badge 
-                     variant="secondary" // Using a consistent variant, colors handled by parent
+                     variant="secondary" 
                      className={`mt-1 w-fit self-start bg-white border ${
                         order.status === 'Active' || order.status === 'PendingPayment' ? 'text-blue-600 border-blue-600' :
                         order.status === 'Preparing' ? 'text-orange-600 border-orange-600' :
-                        order.status === 'Ready' ? 'text-green-600 border-green-600' : 'text-gray-600 border-gray-600'
+                        order.status === 'Ready' ? 'text-green-600 border-green-600' :
+                        order.status === 'Paid' ? 'text-indigo-600 border-indigo-600' : // Paid status badge color
+                        'text-gray-600 border-gray-600'
                      }`}
                     >
                     {order.status}
@@ -206,3 +214,4 @@ export default function KitchenDisplayPage() {
     </div>
   );
 }
+
