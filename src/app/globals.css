@@ -117,10 +117,10 @@ body {
     --chart-4: 265 65% 70%;
     --chart-5: 0 70% 65%;
 
-    /* Animated Background Gradient Colors - Dark Mode (Shades of Blue) */
-    --animated-bg-dark-1: 220 60% 20%;   /* Deep Navy Blue */
-    --animated-bg-dark-2: 210 50% 30%; /* Rich Royal Blue */
-    --animated-bg-dark-3: 190 55% 25%;   /* Dark Teal/Slate Blue */
+    /* Animated Background Gradient Colors - Dark Mode (Thunder & Lightning) */
+    --animated-bg-dark-1: 240 50% 10%;   /* Deep Indigo (Storm Cloud) */
+    --animated-bg-dark-2: 200 100% 90%;  /* Pale Electric Blue (Lightning Flash) */
+    --animated-bg-dark-3: 220 30% 15%;   /* Dark Stormy Grey-Blue */
 
     /* New Order Button Gradient - Dark Mode */
     --button-new-order-start: 220 75% 68%; /* Primary Blue */
@@ -156,16 +156,16 @@ body {
 
   .dark body {
     @apply text-foreground;
-    /* Dark mode animated background */
+    /* Dark mode animated background - Thunder/Lightning effect */
     background: linear-gradient(135deg,
-      hsl(var(--animated-bg-dark-1)),
-      hsl(var(--animated-bg-dark-2)),
-      hsl(var(--animated-bg-dark-3)),
-      hsl(var(--animated-bg-dark-2)),
-      hsl(var(--animated-bg-dark-1))
+      hsl(var(--animated-bg-dark-1)) 0%,
+      hsl(var(--animated-bg-dark-1)) 45%, /* Extend dark color */
+      hsl(var(--animated-bg-dark-2)) 50%, /* Sharp flash band */
+      hsl(var(--animated-bg-dark-1)) 55%, /* Quickly back to dark */
+      hsl(var(--animated-bg-dark-3)) 100%
     );
     background-size: 400% 400%;
-    animation: liveBackgroundAnimation 30s ease infinite;
+    animation: liveBackgroundAnimation 7s linear infinite; /* Faster, linear animation */
   }
 }
 
@@ -225,4 +225,3 @@ body {
 .font-seera-brand {
   font-family: var(--font-playfair-display), Georgia, serif;
 }
-
