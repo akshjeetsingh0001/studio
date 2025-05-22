@@ -20,6 +20,7 @@ interface MenuItem {
   imageUrl: string;
   description?: string;
   'data-ai-hint'?: string;
+  variants?: any[]; // Added to match OrderItem more closely if needed
 }
 
 interface MockOrder {
@@ -59,7 +60,7 @@ export default function DashboardPage() {
         const savedOrdersRaw = localStorage.getItem(USER_SAVED_ORDERS_KEY);
         if (savedOrdersRaw) {
           const savedOrders: MockOrder[] = JSON.parse(savedOrdersRaw);
-          const activeOrders = savedOrders.filter(order => ['Active', 'Preparing', 'PendingPayment', 'Ready'].includes(order.status));
+          const activeOrders = savedOrders.filter(order => ['Active', 'Preparing', 'PendingPayment', 'Ready', 'Paid'].includes(order.status));
           setOpenChecksCount(activeOrders.length);
           setTotalOrdersCount(savedOrders.length);
 
@@ -111,7 +112,7 @@ export default function DashboardPage() {
   }, [loadDashboardData]);
 
   const summaryCards = [
-    { title: "Today's Sales", value: `$${todaysSales.toFixed(2)}`, icon: DollarSign, isStatic: false, change: "", changeType: "neutral" as const },
+    { title: "Today's Sales", value: `₹${todaysSales.toFixed(2)}`, icon: DollarSign, isStatic: false, change: "", changeType: "neutral" as const },
     { title: "Open Checks", value: openChecksCount.toString(), icon: Layers, isStatic: false, change: "", changeType: "neutral" as const },
     { title: "Total Orders", value: totalOrdersCount.toString(), icon: ShoppingBag, isStatic: false, change: "", changeType: "neutral" as const }, 
     { title: "Covers Served", value: coversServed.toString(), icon: Users, isStatic: false, change: "", changeType: "neutral" as const },
@@ -122,7 +123,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <PageHeader title="Dashboard" description="Overview of your restaurant's performance.">
         <Link href="/order/new" passHref>
-          <Button>
+          <Button className="transform transition-transform duration-150 ease-in-out hover:scale-105 active:scale-95">
             <Utensils className="mr-2 h-4 w-4" /> New Order
           </Button>
         </Link>
@@ -130,7 +131,7 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {summaryCards.map((card) => (
-          <Card key={card.title} className="shadow-sm hover:shadow-md transition-shadow duration-200">
+          <Card key={card.title} className="shadow-lg hover:shadow-xl transition-shadow duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
               <card.icon className="h-4 w-4 text-muted-foreground" />
@@ -209,7 +210,7 @@ export default function DashboardPage() {
               />
               <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <h3 className="text-white text-xl font-semibold">{item.name}</h3>
-                <p className="text-green-400 text-lg">${item.price.toFixed(2)}</p>
+                <p className="text-green-400 text-lg">₹{item.price.toFixed(2)}</p>
               </div>
             </div>
           ))}

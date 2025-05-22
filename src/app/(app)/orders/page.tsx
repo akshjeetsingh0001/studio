@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Eye, PlusCircle, Printer, Search, CheckCircle2, Trash2, CheckCheck, ChefHat } from 'lucide-react';
+import { Eye, PlusCircle, Printer, Search, CheckCircle2, Trash2, CheckCheck } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -39,7 +39,7 @@ const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destr
       return 'secondary'; 
     case 'pendingpayment':
       return 'outline'; 
-    case 'paid': // Changed to default (often primary color) for visibility
+    case 'paid': 
       return 'default'; 
     case 'completed':
       return 'secondary'; 
@@ -186,7 +186,7 @@ export default function OrdersPage() {
               />
             </div>
             <Link href="/order/new" passHref>
-              <Button>
+              <Button className="transform transition-transform duration-150 ease-in-out hover:scale-105 active:scale-95">
                 <PlusCircle className="mr-2 h-4 w-4" /> New Order
               </Button>
             </Link>
@@ -275,7 +275,7 @@ function OrderTable({ orders, onMarkAsPaid, onCompleteOrder, onDeleteOrder, isVi
           <TableRow key={order.id} className="hover:bg-muted/50">
             <TableCell className="font-medium">{order.id}</TableCell>
             <TableCell>{order.table}</TableCell>
-            <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
+            <TableCell className="text-right">₹{order.total.toFixed(2)}</TableCell>
             <TableCell>
               <Badge variant={getStatusBadgeVariant(order.status)}>{order.status}</Badge>
             </TableCell>
@@ -351,6 +351,5 @@ function OrderTable({ orders, onMarkAsPaid, onCompleteOrder, onDeleteOrder, isVi
     </Table>
   );
 }
-
 
     

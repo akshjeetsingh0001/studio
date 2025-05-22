@@ -48,7 +48,7 @@ export default function TableManagementPage() {
             <Merge className="mr-2 h-4 w-4" /> Merge Tables
           </Button>
           <Link href="/order/new" passHref>
-            <Button>
+            <Button className="transform transition-transform duration-150 ease-in-out hover:scale-105 active:scale-95">
               <PlusCircle className="mr-2 h-4 w-4" /> New Order
             </Button>
           </Link>
