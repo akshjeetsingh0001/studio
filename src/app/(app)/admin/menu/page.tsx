@@ -15,6 +15,17 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface MenuItem {
   id: string;
@@ -146,6 +157,8 @@ export default function MenuManagementPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [modifiers, setModifiers] = useState<ModifierGroup[]>(initialMockModifiers);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [itemToDeleteId, setItemToDeleteId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const updateLocalStorage = (updatedItems: MenuItem[]) => {
@@ -162,7 +175,7 @@ export default function MenuManagementPage() {
           const parsedItems = JSON.parse(savedItemsRaw);
           setMenuItems(Array.isArray(parsedItems) ? parsedItems : initialMockMenuItems);
            if (!Array.isArray(parsedItems) || parsedItems.length === 0) {
-             updateLocalStorage(initialMockMenuItems); // Initialize if empty or invalid
+             updateLocalStorage(initialMockMenuItems); 
           }
         } else {
           setMenuItems(initialMockMenuItems);
@@ -190,7 +203,7 @@ export default function MenuManagementPage() {
       id: `CAT${index + 1}`,
       name,
       itemCount: count,
-    })).sort((a,b) => a.name.localeCompare(b.name)); // Sort categories alphabetically
+    })).sort((a,b) => a.name.localeCompare(b.name)); 
     setCategories(derivedCategories);
   }, [menuItems]);
 
@@ -221,27 +234,37 @@ export default function MenuManagementPage() {
     }
   };
 
-  const handleDeleteItem = (itemId: string) => {
-    let deletedItemName = '';
-    setMenuItems(prevItems => {
-        const itemToDelete = prevItems.find(item => item.id === itemId);
+  const confirmDeleteItem = () => {
+    if (itemToDeleteId) {
+      let deletedItemName = '';
+      setMenuItems(prevItems => {
+        const itemToDelete = prevItems.find(item => item.id === itemToDeleteId);
         if (itemToDelete) {
-            deletedItemName = itemToDelete.name;
+          deletedItemName = itemToDelete.name;
         }
-        const updatedItems = prevItems.filter(item => item.id !== itemId);
+        const updatedItems = prevItems.filter(item => item.id !== itemToDeleteId);
         updateLocalStorage(updatedItems);
         return updatedItems;
-    });
+      });
 
-    if (deletedItemName) {
+      if (deletedItemName) {
         toast({
-            title: "Item Deleted",
-            description: `${deletedItemName} has been removed from the menu.`,
-            variant: "destructive",
-            icon: <Trash2 className="h-5 w-5" />,
+          title: "Item Deleted",
+          description: `${deletedItemName} has been removed from the menu.`,
+          variant: "destructive",
+          icon: <Trash2 className="h-5 w-5" />,
         });
+      }
     }
+    setItemToDeleteId(null);
+    setIsDeleteDialogOpen(false);
   };
+
+  const openDeleteDialog = (itemId: string) => {
+    setItemToDeleteId(itemId);
+    setIsDeleteDialogOpen(true);
+  };
+
 
   const handleAddCategory = () => {
     toast({
@@ -260,10 +283,11 @@ export default function MenuManagementPage() {
   const filteredMenuItems = menuItems.filter(item => 
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.category.toLowerCase().includes(searchTerm.toLowerCase())
-  ).sort((a,b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name)); // Sort items by category then name
+  ).sort((a,b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name)); 
 
 
   return (
+    <>
     <div className="space-y-6">
       <PageHeader title="Menu Management" description="Add, edit, and organize your menu items, categories, and modifiers.">
         <div className="flex items-center gap-2">
@@ -335,10 +359,16 @@ export default function MenuManagementPage() {
                         />
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" title="Edit Item" disabled> {/* Edit to be implemented */}
+                        <Button variant="ghost" size="icon" title="Edit Item" disabled> 
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" title="Delete Item" className="text-destructive hover:text-destructive/80" onClick={() => handleDeleteItem(item.id)}>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          title="Delete Item" 
+                          className="text-destructive hover:text-destructive/80" 
+                          onClick={() => openDeleteDialog(item.id)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -448,8 +478,20 @@ export default function MenuManagementPage() {
         </TabsContent>
       </Tabs>
     </div>
+    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the menu item.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteItem}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
-
-
-    

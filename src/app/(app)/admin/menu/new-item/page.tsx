@@ -19,7 +19,6 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';
 
-// Schema for form validation
 const menuItemSchema = z.object({
   name: z.string().min(3, { message: "Item name must be at least 3 characters." }),
   category: z.string().min(1, { message: "Category is required." }),
@@ -48,7 +47,7 @@ const initialMockCategories = [
     'KUHLAD SPECIALS',
     'SIDES',
     'DIPS',
-    'New Category' // Keep option to add a new one manually
+    // 'New Category' // Option for manual entry not needed if dynamic
 ];
 
 
@@ -71,10 +70,13 @@ export default function AddNewMenuItemPage() {
 
   const onSubmit = (data: MenuItemFormData) => {
     setIsLoading(true);
-    console.log('New Menu Item Data:', data);
+    
+    const categoryCode = data.category.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4) || 'GNRL';
+    const nameCode = data.name.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3) || 'ITM';
+    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
 
     const newItem = {
-      id: `ITEM_${data.category.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0,4)}_${data.name.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0,3)}_${Date.now().toString().slice(-4)}`,
+      id: `ITEM_${categoryCode}_${nameCode}_${randomSuffix}`,
       ...data,
       imageUrl: data.imageUrl || `https://placehold.co/100x100.png?text=${data.name.substring(0,2)}`, 
       'data-ai-hint': `${data.category.toLowerCase()} food`,
@@ -134,7 +136,7 @@ export default function AddNewMenuItemPage() {
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {initialMockCategories.sort((a,b) => a.localeCompare(b)).map(cat => ( // Sort categories alphabetically
+                    {initialMockCategories.sort((a,b) => a.localeCompare(b)).map(cat => (
                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                     ))}
                   </SelectContent>
@@ -180,6 +182,3 @@ export default function AddNewMenuItemPage() {
     </div>
   );
 }
-
-
-    
