@@ -52,10 +52,10 @@ body {
     --sidebar-ring: 170 55% 48%;
 
     /* Chart Colors - Light Mode */
-    --chart-1: 225 65% 55%; 
-    --chart-2: 170 55% 42%; 
-    --chart-3: 35 70% 60%;  
-    --chart-4: 260 60% 65%; 
+    --chart-1: 225 65% 55%;
+    --chart-2: 170 55% 42%;
+    --chart-3: 35 70% 60%;
+    --chart-4: 260 60% 65%;
     --chart-5: 0 65% 60%;
 
     /* Animated Background Gradient Colors - Light Mode */
@@ -104,12 +104,12 @@ body {
     --sidebar-accent-foreground: 220 15% 88%;
     --sidebar-border: 220 15% 8%;
     --sidebar-ring: 170 65% 60%;
-    
+
     /* Chart Colors - Dark Mode */
-    --chart-1: 220 75% 68%; 
-    --chart-2: 170 65% 55%; 
-    --chart-3: 40 80% 65%;  
-    --chart-4: 265 65% 70%; 
+    --chart-1: 220 75% 68%;
+    --chart-2: 170 65% 55%;
+    --chart-3: 40 80% 65%;
+    --chart-4: 265 65% 70%;
     --chart-5: 0 70% 65%;
 
     /* Animated Background Gradient Colors - Dark Mode */
@@ -130,15 +130,15 @@ body {
     @apply border-border;
   }
   body {
-    @apply text-foreground; /* Keep text-foreground, remove bg-background */
+    @apply text-foreground; /* Ensure text color is set */
     font-feature-settings: "rlig" 1, "calt" 1;
 
     /* Light mode animated background */
-    background: linear-gradient(135deg, 
-      hsl(var(--animated-bg-light-1)), 
-      hsl(var(--animated-bg-light-2)), 
+    background: linear-gradient(135deg,
+      hsl(var(--animated-bg-light-1)),
+      hsl(var(--animated-bg-light-2)),
       hsl(var(--animated-bg-light-3)),
-      hsl(var(--animated-bg-light-2)), /* Add intermediate step for smoother looping */
+      hsl(var(--animated-bg-light-2)),
       hsl(var(--animated-bg-light-1))
     );
     background-size: 400% 400%;
@@ -146,13 +146,13 @@ body {
   }
 
   .dark body {
-    /* text-foreground will be inherited or set by .dark's --foreground from the first @layer base */
+    /* text-foreground is already applied from the .dark scope in :root */
     /* Dark mode animated background */
-    background: linear-gradient(135deg, 
-      hsl(var(--animated-bg-dark-1)), 
-      hsl(var(--animated-bg-dark-2)), 
+    background: linear-gradient(135deg,
+      hsl(var(--animated-bg-dark-1)),
+      hsl(var(--animated-bg-dark-2)),
       hsl(var(--animated-bg-dark-3)),
-      hsl(var(--animated-bg-dark-2)), /* Add intermediate step for smoother looping */
+      hsl(var(--animated-bg-dark-2)),
       hsl(var(--animated-bg-dark-1))
     );
     background-size: 400% 400%;
@@ -161,13 +161,13 @@ body {
 }
 
 @keyframes rgb-cycle {
-  0% { color: hsl(0, 100%, 50%); } /* Red */
-  16% { color: hsl(60, 100%, 50%); } /* Yellow */
-  33% { color: hsl(120, 100%, 50%); } /* Green */
-  50% { color: hsl(180, 100%, 50%); } /* Cyan */
-  66% { color: hsl(240, 100%, 50%); } /* Blue */
-  83% { color: hsl(300, 100%, 50%); } /* Magenta */
-  100% { color: hsl(360, 100%, 50%); } /* Red (to complete the cycle) */
+  0% { color: hsl(0, 100%, 50%); }
+  16% { color: hsl(60, 100%, 50%); }
+  33% { color: hsl(120, 100%, 50%); }
+  50% { color: hsl(180, 100%, 50%); }
+  66% { color: hsl(240, 100%, 50%); }
+  83% { color: hsl(300, 100%, 50%); }
+  100% { color: hsl(360, 100%, 50%); }
 }
 
 @keyframes logoIconPulse {
@@ -191,7 +191,7 @@ body {
 }
 
 .animated-logo-icon {
-  animation: 
+  animation:
     rgb-cycle 8s linear infinite,
     logoIconPulse 2.5s ease-in-out infinite;
 }
