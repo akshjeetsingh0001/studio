@@ -14,7 +14,7 @@ body {
     --foreground: 220 10% 25%; /* Dark, slightly desaturated cool grey */
 
     --muted: 220 25% 94%; /* Lighter grey for muted elements */
-    --muted-foreground: 220 10% 35%; /* Softer, darker grey for muted text (WAS 220 10% 45%) */
+    --muted-foreground: 220 10% 35%; /* Softer, darker grey for muted text */
 
     --popover: 0 0% 100%; /* Clean white for popovers */
     --popover-foreground: 220 10% 25%;
@@ -42,13 +42,13 @@ body {
     --radius: 0.5rem;
 
     /* Sidebar specific theme variables - Light */
-    --sidebar-background: transparent; /* Made transparent with backdrop blur */
-    --sidebar-foreground: 220 10% 25%; /* MODIFIED: Dark text for light mode transparent sidebar */
-    --sidebar-primary: 170 55% 48%; /* Accent color (teal) for active items */
+    --sidebar-background: transparent;
+    --sidebar-foreground: 220 10% 25%;
+    --sidebar-primary: 170 55% 48%; 
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 15% 28%; /* Slightly lighter for hover */
+    --sidebar-accent: 220 20% 92%; 
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 220 15% 18%; /* Darker border for sidebar elements */
+    --sidebar-border: transparent; 
     --sidebar-ring: 170 55% 48%;
 
     /* Chart Colors - Light Mode */
@@ -100,13 +100,13 @@ body {
     --ring: 220 75% 68%; /* Primary color for focus rings */
 
     /* Sidebar specific theme variables - Dark */
-    --sidebar-background: transparent; /* Made transparent with backdrop blur */
-    --sidebar-foreground: 220 15% 85%; /* Light text, good contrast for dark mode transparent sidebar */
-    --sidebar-primary: 170 65% 60%; /* Accent for active sidebar items */
+    --sidebar-background: transparent; 
+    --sidebar-foreground: 220 15% 85%; 
+    --sidebar-primary: 170 65% 60%; 
     --sidebar-primary-foreground: 220 10% 10%;
-    --sidebar-accent: 220 15% 16%; /* Subtle hover for sidebar */
+    --sidebar-accent: 220 15% 22%; 
     --sidebar-accent-foreground: 220 15% 95%;
-    --sidebar-border: 220 15% 8%;
+    --sidebar-border: transparent; 
     --sidebar-ring: 170 65% 60%;
 
     /* Chart Colors - Dark Mode */
@@ -138,7 +138,7 @@ body {
     @apply border-border;
   }
   body {
-    @apply text-foreground; /* Ensure text color is set */
+    @apply text-foreground; 
     font-feature-settings: "rlig" 1, "calt" 1;
 
     /* Light mode animated background */
@@ -223,5 +223,5 @@ body {
 
 /* New class for Seera brand font */
 .font-seera-brand {
-  font-family: Georgia, serif;
+  font-family: var(--font-playfair-display), Georgia, serif;
 }
