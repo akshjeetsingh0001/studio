@@ -14,7 +14,7 @@ body {
     --foreground: 220 10% 25%; /* Dark, slightly desaturated cool grey */
 
     --muted: 220 25% 94%; /* Lighter grey for muted elements */
-    --muted-foreground: 220 10% 45%; /* Softer grey for muted text */
+    --muted-foreground: 220 10% 35%; /* Softer, darker grey for muted text (WAS 45%) */
 
     --popover: 0 0% 100%; /* Clean white for popovers */
     --popover-foreground: 220 10% 25%;
@@ -169,7 +169,6 @@ body {
   83.33% { color: hsl(300, 100%, 50%); } /* Magenta */
   100% { color: hsl(360, 100%, 50%); } /* Red */
 }
-
 
 @keyframes logoIconPulse {
   0%, 100% {
