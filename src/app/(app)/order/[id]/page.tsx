@@ -17,17 +17,17 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
 interface MenuItemVariant {
-  size?: string; // For pizzas: 'Small', 'Medium', 'Large'
-  type?: string; // For pasta: 'Red Sauce', 'White Sauce', 'Combi Sauce'
+  size?: string;
+  type?: string; 
   price: number;
-  idSuffix: string; // e.g., '_S', '_M', '_L', '_RED'
+  idSuffix: string;
 }
 
 interface MenuItem {
   id: string;
   name: string;
   category: string;
-  price: number; // Base price or price of default/smallest variant
+  price: number;
   imageUrl: string;
   description?: string;
   availability: boolean;
@@ -37,12 +37,12 @@ interface MenuItem {
 
 export interface OrderItem extends MenuItem {
   quantity: number;
-  // Potentially add selectedVariant information if needed for complex logic later
-  // selectedVariant?: MenuItemVariant; 
 }
 
 const USER_MENU_ITEMS_KEY = 'dineSwiftMenuItems';
 const USER_SAVED_ORDERS_KEY = 'dineSwiftUserSavedOrders';
+
+const initialMockMenuItemsForFallback: MenuItem[] = []; // Default to empty if localStorage fails catastrophically
 
 export default function OrderEntryPage() {
   const params = useParams();
@@ -84,13 +84,15 @@ export default function OrderEntryPage() {
             return;
           }
         }
-        setMenuItems([]);
+        // If localStorage is empty or items are not an array or empty array, use fallback and potentially log an error or use default mocks.
+        // For now, we'll clear to an empty array if nothing valid is found.
+        setMenuItems(initialMockMenuItemsForFallback);
       } catch (e) {
         console.error("Failed to load menu items from localStorage for order page", e);
-        setMenuItems([]); 
+        setMenuItems(initialMockMenuItemsForFallback); 
       }
     } else {
-       setMenuItems([]); 
+       setMenuItems(initialMockMenuItemsForFallback); 
     }
   }, []);
 
@@ -119,22 +121,19 @@ export default function OrderEntryPage() {
   const handleVariantSelected = (baseItem: MenuItem, variant: MenuItemVariant) => {
     const orderItem: OrderItem = {
       ...baseItem,
-      id: `${baseItem.id}${variant.idSuffix}`, // Unique ID for the variant
+      id: `${baseItem.id}${variant.idSuffix}`, 
       name: `${baseItem.name} (${variant.size || variant.type})`,
       price: variant.price,
       quantity: 1,
-      variants: undefined, // Clear variants for the order item itself, as it's now specific
-      // selectedVariant: variant, // Optionally store which variant was chosen
+      variants: undefined, 
     };
-    addItemToOrder(orderItem, true); // Pass true if it's a variant selection
+    addItemToOrder(orderItem, true);
     setIsVariantDialogOpen(false);
     setSelectedItemForVariant(null);
   };
 
   const addItemToOrder = (itemToAdd: OrderItem | MenuItem, isVariant: boolean = false) => {
      setCurrentOrder((prevOrder) => {
-      // If it's a variant, its ID is already unique (e.g., PIZZA_S).
-      // If it's a base item (not a variant from dialog), its ID is the base ID.
       const existingItem = prevOrder.find((orderItem) => orderItem.id === itemToAdd.id);
       
       if (existingItem) {
@@ -142,13 +141,10 @@ export default function OrderEntryPage() {
           orderItem.id === itemToAdd.id ? { ...orderItem, quantity: orderItem.quantity + 1 } : orderItem
         );
       }
-      // If it's a new item (or a new variant not yet in order), add it with quantity 1
-      // Ensure all properties of OrderItem are present
-      const newItem = itemToAdd as OrderItem; // Type assertion
+      const newItem = itemToAdd as OrderItem;
       return [...prevOrder, { ...newItem, quantity: newItem.quantity || 1 }];
     });
   };
-
 
   const removeItemFromOrder = (itemId: string) => {
     setCurrentOrder((prevOrder) => {
@@ -170,7 +166,11 @@ export default function OrderEntryPage() {
     return currentOrder.reduce((total, item) => total + item.price * item.quantity, 0);
   };
 
-  const allCategories = ['All', ...Array.from(new Set(menuItems.map(item => item.category)))];
+  const allCategories = ['All', ...Array.from(new Set(menuItems.map(item => item.category)))].sort((a,b) => {
+      if (a === 'All') return -1;
+      if (b === 'All') return 1;
+      return a.localeCompare(b);
+  });
 
   const availableMenuItems = menuItems.filter(item => item.availability);
 
@@ -181,7 +181,6 @@ export default function OrderEntryPage() {
   const categoriesToDisplay = selectedCategory === 'All'
     ? Array.from(new Set(filteredMenuItems.map(item => item.category))).sort()
     : [selectedCategory];
-
 
   const fetchAiSuggestions = useCallback(async () => {
     if (currentOrder.length === 0) {
@@ -258,7 +257,6 @@ export default function OrderEntryPage() {
         description: item.description,
         availability: item.availability, 
         'data-ai-hint': item['data-ai-hint'],
-        // Do not store variants array in orderDetails, it's already resolved
       })),
     };
 
@@ -374,10 +372,9 @@ export default function OrderEntryPage() {
         const savedOrders = JSON.parse(savedOrdersRaw);
         const orderToEdit = savedOrders.find((order: any) => order.id.toLowerCase() === pageParamId.toLowerCase() || order.table.toLowerCase() === pageParamId.toLowerCase());
         if (orderToEdit && orderToEdit.orderDetails) {
-          // Ensure orderDetails conform to OrderItem structure, especially 'quantity'
           const validatedOrderDetails = orderToEdit.orderDetails.map((detail: any) => ({
             ...detail,
-            quantity: detail.quantity || 1, // Ensure quantity is at least 1
+            quantity: detail.quantity || 1, 
           }));
           setCurrentOrder(validatedOrderDetails);
         } else if (orderToEdit) {
@@ -386,7 +383,6 @@ export default function OrderEntryPage() {
       }
     }
   }, [pageParamId]);
-
 
   if (!pageParamId) {
     return (
@@ -407,6 +403,66 @@ export default function OrderEntryPage() {
     return `₹${item.price.toFixed(2)}`;
   };
 
+  const renderVariantSelectionDialog = () => {
+    if (!selectedItemForVariant || !selectedItemForVariant.variants) return null;
+
+    const variants = selectedItemForVariant.variants;
+    // Determine if variants are simple sizes (S, M, L) or similar short lists (e.g., Regular, Large)
+    const useHorizontalLayout = variants.length > 0 && variants.length <= 3 && variants.every(v => v.size && v.size.length < 10);
+
+    return (
+      <Dialog open={isVariantDialogOpen} onOpenChange={(open) => {
+          if (!open) {
+              setIsVariantDialogOpen(false);
+              setSelectedItemForVariant(null);
+          }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {`Select ${variants.some(v => v.size) ? 'size' : 'option'} for ${selectedItemForVariant.name}`}
+            </DialogTitle>
+            <DialogDescription>
+              Choose one of the available options below.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {useHorizontalLayout ? (
+            <div className="flex justify-center space-x-2 sm:space-x-3 py-4">
+              {variants.map((variant) => (
+                <Button
+                  key={variant.idSuffix}
+                  variant="default"
+                  className="flex-1 flex-col h-auto p-2 sm:p-3 text-center"
+                  onClick={() => handleVariantSelected(selectedItemForVariant, variant)}
+                >
+                  <span className="text-base sm:text-lg font-semibold">{variant.size ? variant.size.charAt(0).toUpperCase() : (variant.type ? variant.type.charAt(0).toUpperCase() : 'Opt')}</span>
+                  <span className="text-xs sm:text-sm">₹{variant.price.toFixed(2)}</span>
+                </Button>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 py-4">
+              {variants.map((variant) => (
+                <Button
+                  key={variant.idSuffix}
+                  variant="outline"
+                  className="w-full justify-between h-auto py-3 text-left"
+                  onClick={() => handleVariantSelected(selectedItemForVariant, variant)}
+                >
+                  <span>{variant.size || variant.type}</span>
+                  <span className="font-semibold">₹{variant.price.toFixed(2)}</span>
+                </Button>
+              ))}
+            </div>
+          )}
+          <DialogFooter>
+              <Button variant="ghost" onClick={() => { setIsVariantDialogOpen(false); setSelectedItemForVariant(null); }}>Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  };
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]"> 
@@ -438,10 +494,10 @@ export default function OrderEntryPage() {
       <div className="flex flex-col lg:flex-row gap-6 flex-1 overflow-hidden">
         <Card className="lg:w-2/3 flex flex-col shadow-lg">
           <CardContent className="flex-1 overflow-hidden p-0">
-            <ScrollArea className="h-full p-6 pt-0">
+            <ScrollArea className="h-full p-6 pt-4"> {/* Added pt-4 to give some space below category buttons */}
               {categoriesToDisplay.map(catName => {
                 const itemsInCategory = filteredMenuItems.filter(item => item.category === catName);
-                if (itemsInCategory.length === 0 && selectedCategory !== 'All') return null; 
+                if (itemsInCategory.length === 0 && selectedCategory !== 'All' && availableMenuItems.length > 0) return null; 
 
                 return (
                   <div key={catName} className="mb-6">
@@ -449,16 +505,16 @@ export default function OrderEntryPage() {
                         <h3 className="text-xl font-semibold mb-4 pb-2 border-b border-border sticky top-0 bg-card py-2 z-10">{catName}</h3>
                      )}
                     {itemsInCategory.length === 0 && selectedCategory !== 'All' && (
-                       <p className="text-muted-foreground col-span-full">No available items in this category.</p>
+                       <p className="text-muted-foreground col-span-full text-center py-4">No available items in this category.</p>
                     )}
-                     {itemsInCategory.length === 0 && selectedCategory === 'All' && availableMenuItems.length > 0 && (
-                       <p className="text-muted-foreground col-span-full">No items in category &quot;{catName}&quot;. Check other categories or &quot;All&quot;.</p>
+                    {itemsInCategory.length === 0 && selectedCategory === 'All' && availableMenuItems.length > 0 && (
+                      <p className="text-muted-foreground col-span-full text-center py-4">No items found in category "{catName}".</p>
                     )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {itemsInCategory.map((item) => (
                         <Card
                           key={item.id}
-                          className="flex flex-col overflow-hidden hover:shadow-md transition-shadow transition-transform duration-150 ease-in-out hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                          className="flex flex-col overflow-hidden hover:shadow-md transition-all duration-150 ease-in-out hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                           onClick={() => handleItemClick(item)}
                         >
                           <div className="relative w-full h-32">
@@ -482,10 +538,10 @@ export default function OrderEntryPage() {
                   </div>
                 );
               })}
-              {filteredMenuItems.length === 0 && selectedCategory !== 'All' && (
+              {filteredMenuItems.length === 0 && selectedCategory !== 'All' && availableMenuItems.length > 0 && (
                 <p className="text-center text-muted-foreground py-8">No available menu items match your criteria.</p>
               )}
-               {availableMenuItems.length === 0 && selectedCategory === 'All' && (
+               {availableMenuItems.length === 0 && (
                  <p className="text-center text-muted-foreground py-8">No items available in the menu. Please add items via Menu Management.</p>
               )}
             </ScrollArea>
@@ -518,7 +574,6 @@ export default function OrderEntryPage() {
                             <MinusCircle className="h-4 w-4" />
                           </Button>
                           <span className="w-4 text-center">{item.quantity}</span>
-                           {/* Re-enable adding more of an already selected variant/item */}
                           <Button variant="ghost" size="icon" onClick={() => addItemToOrder(item, true)} className="h-7 w-7">
                             <PlusCircle className="h-4 w-4" />
                           </Button>
@@ -570,14 +625,12 @@ export default function OrderEntryPage() {
                         variant="outline" 
                         className="w-full justify-start text-left h-auto py-2 hover:border-accent hover:text-accent"
                         onClick={() => {
-                          // Attempt to find a matching available base item for the suggestion.
-                          // This is a simplified match; real system might need fuzzy matching or more structured suggestions.
                           const suggestedBaseItem = menuItems.find(mi => 
                             mi.availability && suggestion.toLowerCase().includes(mi.name.toLowerCase())
                           );
                           
                           if (suggestedBaseItem) {
-                            handleItemClick(suggestedBaseItem); // This will open variant dialog if needed
+                            handleItemClick(suggestedBaseItem); 
                             toast({ title: "Suggestion added!", description: `Considered: ${suggestion}. Please select options if prompted.`});
                           } else {
                              toast({ title: "Suggestion", description: `Consider: ${suggestion}`});
@@ -595,39 +648,7 @@ export default function OrderEntryPage() {
           </Card>
         </div>
       </div>
-      {selectedItemForVariant && (
-        <Dialog open={isVariantDialogOpen} onOpenChange={(open) => {
-            if (!open) {
-                setIsVariantDialogOpen(false);
-                setSelectedItemForVariant(null);
-            }
-        }}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Select size for {selectedItemForVariant.name}</DialogTitle>
-              <DialogDescription>
-                Choose one of the available options below.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-3 py-4">
-              {selectedItemForVariant.variants?.map((variant) => (
-                <Button
-                  key={variant.idSuffix}
-                  variant="outline"
-                  className="w-full justify-between h-auto py-3"
-                  onClick={() => handleVariantSelected(selectedItemForVariant, variant)}
-                >
-                  <span>{variant.size || variant.type}</span>
-                  <span className="font-semibold">₹{variant.price.toFixed(2)}</span>
-                </Button>
-              ))}
-            </div>
-            <DialogFooter>
-                <Button variant="ghost" onClick={() => { setIsVariantDialogOpen(false); setSelectedItemForVariant(null); }}>Cancel</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+      {renderVariantSelectionDialog()}
     </div>
   );
 }
