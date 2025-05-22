@@ -116,10 +116,10 @@ body {
     --chart-4: 265 65% 70%;
     --chart-5: 0 70% 65%;
 
-    /* Animated Background Gradient Colors - Dark Mode (Food-Inspired) */
-    --animated-bg-dark-1: 25 60% 25%;   /* Deep terracotta/burnt orange */
-    --animated-bg-dark-2: 30 40% 18%; /* Warm dark brown */
-    --animated-bg-dark-3: 0 50% 22%;   /* Muted deep berry red */
+    /* Animated Background Gradient Colors - Dark Mode (Shades of Blue) */
+    --animated-bg-dark-1: 220 60% 20%;   /* Deep Navy Blue */
+    --animated-bg-dark-2: 210 50% 30%; /* Rich Royal Blue */
+    --animated-bg-dark-3: 190 55% 25%;   /* Dark Teal/Slate Blue */
 
     /* New Order Button Gradient - Dark Mode */
     --button-new-order-start: 220 75% 68%; /* Primary Blue */
@@ -224,4 +224,3 @@ body {
 .font-seera-brand {
   font-family: var(--font-playfair-display), Georgia, serif;
 }
-
