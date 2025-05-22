@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Eye, PlusCircle, Printer, Search, CheckCircle2, Trash2, CheckCheck } from 'lucide-react';
+import { Eye, PlusCircle, Printer, Search, CheckCircle2, Trash2, CheckCheck, Utensils } from 'lucide-react';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -40,7 +40,7 @@ const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destr
     case 'pendingpayment':
       return 'outline'; 
     case 'paid': 
-      return 'default'; 
+      return 'default'; // Uses primary color, good for "Paid" in active list
     case 'completed':
       return 'secondary'; 
     case 'cancelled':
@@ -134,7 +134,7 @@ export default function OrdersPage() {
   };
 
   const handleCompleteOrder = (orderId: string) => {
-     handleUpdateOrderStatus(orderId, 'Completed', `Order ${orderId} marked as Completed. This order will now move to past orders.`, <CheckCheck className="h-4 w-4 text-blue-600" />);
+     handleUpdateOrderStatus(orderId, 'Completed', `Order ${orderId} marked as Completed. Moved to past orders.`, <CheckCheck className="h-4 w-4 text-blue-600" />);
   };
 
   const handleDeleteOrder = (orderId: string) => {
@@ -186,8 +186,8 @@ export default function OrdersPage() {
               />
             </div>
             <Link href="/order/new" passHref>
-              <Button className="transform transition-transform duration-150 ease-in-out hover:scale-105 active:scale-95">
-                <PlusCircle className="mr-2 h-4 w-4" /> New Order
+              <Button className="transform transition-transform duration-150 ease-in-out hover:scale-105 active:scale-95 bg-gradient-to-r from-button-new-order-start to-button-new-order-end text-primary-foreground hover:brightness-110">
+                <Utensils className="mr-2 h-4 w-4" /> New Order
               </Button>
             </Link>
           </div>
@@ -277,7 +277,12 @@ function OrderTable({ orders, onMarkAsPaid, onCompleteOrder, onDeleteOrder, isVi
             <TableCell>{order.table}</TableCell>
             <TableCell className="text-right">₹{order.total.toFixed(2)}</TableCell>
             <TableCell>
-              <Badge variant={getStatusBadgeVariant(order.status)}>{order.status}</Badge>
+              <Badge 
+                variant={getStatusBadgeVariant(order.status)} 
+                className={order.status.toLowerCase() === 'paid' ? 'bg-green-500 text-white hover:bg-green-600' : ''}
+              >
+                {order.status}
+              </Badge>
             </TableCell>
             <TableCell>{order.time}</TableCell>
             <TableCell className="text-right space-x-1">
@@ -294,7 +299,7 @@ function OrderTable({ orders, onMarkAsPaid, onCompleteOrder, onDeleteOrder, isVi
                 </TooltipContent>
               </Tooltip>
 
-              {isViewingActiveOrders && ['active', 'preparing', 'ready', 'pendingpayment'].includes(order.status.toLowerCase()) && (
+              {isViewingActiveOrders && !['paid', 'completed', 'cancelled'].includes(order.status.toLowerCase()) && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="icon" onClick={() => onMarkAsPaid(order.id)}>
@@ -351,5 +356,3 @@ function OrderTable({ orders, onMarkAsPaid, onCompleteOrder, onDeleteOrder, isVi
     </Table>
   );
 }
-
-    

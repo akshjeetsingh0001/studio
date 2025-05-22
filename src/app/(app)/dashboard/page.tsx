@@ -60,7 +60,7 @@ export default function DashboardPage() {
         const savedOrdersRaw = localStorage.getItem(USER_SAVED_ORDERS_KEY);
         if (savedOrdersRaw) {
           const savedOrders: MockOrder[] = JSON.parse(savedOrdersRaw);
-          const activeOrders = savedOrders.filter(order => ['Active', 'Preparing', 'PendingPayment', 'Ready', 'Paid'].includes(order.status));
+          const activeOrders = savedOrders.filter(order => ['Active', 'Preparing', 'PendingPayment', 'Ready'].includes(order.status));
           setOpenChecksCount(activeOrders.length);
           setTotalOrdersCount(savedOrders.length);
 
@@ -123,7 +123,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <PageHeader title="Dashboard" description="Overview of your restaurant's performance.">
         <Link href="/order/new" passHref>
-          <Button className="transform transition-transform duration-150 ease-in-out hover:scale-105 active:scale-95">
+          <Button className="transform transition-transform duration-150 ease-in-out hover:scale-105 active:scale-95 bg-gradient-to-r from-button-new-order-start to-button-new-order-end text-primary-foreground hover:brightness-110">
             <Utensils className="mr-2 h-4 w-4" /> New Order
           </Button>
         </Link>

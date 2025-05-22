@@ -60,7 +60,9 @@ export default {
   				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
   				border: 'hsl(var(--sidebar-border))',
   				ring: 'hsl(var(--sidebar-ring))'
-  			}
+  			},
+        'button-new-order-start': 'hsl(var(--button-new-order-start))',
+        'button-new-order-end': 'hsl(var(--button-new-order-end))',
   		},
   		borderRadius: {
   			lg: 'var(--radius)',

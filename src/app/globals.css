@@ -62,6 +62,10 @@ body {
     --animated-bg-light-1: 0 70% 90%;   /* Light Pink/Red */
     --animated-bg-light-2: 120 60% 90%; /* Light Mint/Green */
     --animated-bg-light-3: 210 70% 90%; /* Light Sky Blue */
+
+    /* New Order Button Gradient - Light Mode */
+    --button-new-order-start: 225 65% 55%; /* Primary Blue */
+    --button-new-order-end: 205 75% 58%;   /* Vibrant Sky Blue */
   }
 
   .dark {
@@ -116,6 +120,10 @@ body {
     --animated-bg-dark-1: 0 50% 25%;   /* Deep Ruby Red */
     --animated-bg-dark-2: 120 40% 20%; /* Deep Emerald Green */
     --animated-bg-dark-3: 220 50% 25%; /* Deep Sapphire Blue */
+
+    /* New Order Button Gradient - Dark Mode */
+    --button-new-order-start: 220 75% 68%; /* Primary Blue */
+    --button-new-order-end: 180 70% 60%;   /* Bright Cyan/Teal */
   }
 }
 
@@ -181,6 +189,13 @@ body {
   }
 }
 
+.animated-logo-icon {
+  animation:
+    rgb-cycle 8s linear infinite,
+    logoIconPulse 2.5s ease-in-out infinite;
+}
+
+
 @keyframes letter-reveal {
   0% {
     opacity: 0;
@@ -190,12 +205,6 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.animated-logo-icon {
-  animation:
-    rgb-cycle 8s linear infinite,
-    logoIconPulse 2.5s ease-in-out infinite;
 }
 
 .seera-text-container {

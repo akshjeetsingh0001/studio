@@ -5,7 +5,7 @@ import type React from 'react';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Clock, Edit, Merge, PlusCircle, Users, XCircle, ThumbsUp } from 'lucide-react';
+import { CheckCircle, Clock, Edit, Merge, PlusCircle, Users, XCircle, ThumbsUp, Utensils } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast'; 
@@ -48,8 +48,8 @@ export default function TableManagementPage() {
             <Merge className="mr-2 h-4 w-4" /> Merge Tables
           </Button>
           <Link href="/order/new" passHref>
-            <Button className="transform transition-transform duration-150 ease-in-out hover:scale-105 active:scale-95">
-              <PlusCircle className="mr-2 h-4 w-4" /> New Order
+            <Button className="transform transition-transform duration-150 ease-in-out hover:scale-105 active:scale-95 bg-gradient-to-r from-button-new-order-start to-button-new-order-end text-primary-foreground hover:brightness-110">
+              <Utensils className="mr-2 h-4 w-4" /> New Order
             </Button>
           </Link>
         </div>
