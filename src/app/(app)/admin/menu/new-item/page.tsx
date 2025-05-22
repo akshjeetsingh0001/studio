@@ -32,8 +32,24 @@ const menuItemSchema = z.object({
 type MenuItemFormData = z.infer<typeof menuItemSchema>;
 
 const USER_MENU_ITEMS_KEY = 'dineSwiftMenuItems';
-// Also used in menu/page.tsx to list categories, could be shared
-const initialMockCategories = ['Appetizers', 'Main Course', 'Sides', 'Drinks', 'Desserts', 'New Category'];
+
+const initialMockCategories = [
+    'PIZZAS - CLASSIC',
+    'PIZZAS - SIMPLE',
+    'PIZZAS - PREMIUM',
+    'PIZZAS - SPECIAL',
+    'PIZZAS - SINGLES',
+    'PIZZAS - DOUBLES',
+    'EXTRAS',
+    'SANDWICHES',
+    'PASTA',
+    'FRIES',
+    'BURGERS',
+    'KUHLAD SPECIALS',
+    'SIDES',
+    'DIPS',
+    'New Category' // Keep option to add a new one manually
+];
 
 
 export default function AddNewMenuItemPage() {
@@ -58,9 +74,10 @@ export default function AddNewMenuItemPage() {
     console.log('New Menu Item Data:', data);
 
     const newItem = {
-      id: `ITEM${Date.now().toString().slice(-6)}`, // Generate a unique ID
+      id: `ITEM_${data.category.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0,4)}_${data.name.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0,3)}_${Date.now().toString().slice(-4)}`,
       ...data,
-      imageUrl: data.imageUrl || `https://placehold.co/100x100.png?text=${data.name.substring(0,2)}`, // Default placeholder
+      imageUrl: data.imageUrl || `https://placehold.co/100x100.png?text=${data.name.substring(0,2)}`, 
+      'data-ai-hint': `${data.category.toLowerCase()} food`,
     };
 
     try {
@@ -117,10 +134,9 @@ export default function AddNewMenuItemPage() {
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {initialMockCategories.map(cat => (
+                    {initialMockCategories.sort((a,b) => a.localeCompare(b)).map(cat => ( // Sort categories alphabetically
                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                     ))}
-                    {/* Consider adding an option to create a new category on the fly */}
                   </SelectContent>
                 </Select>
                 {form.formState.errors.category && <p className="text-sm text-destructive mt-1">{form.formState.errors.category.message}</p>}
@@ -164,3 +180,6 @@ export default function AddNewMenuItemPage() {
     </div>
   );
 }
+
+
+    
