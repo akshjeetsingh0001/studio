@@ -1,6 +1,7 @@
 
 import { ChefHat } from 'lucide-react';
 import type React from 'react';
+import { cn } from '@/lib/utils';
 
 interface AppLogoProps {
   className?: string;
@@ -12,12 +13,12 @@ const AppLogo: React.FC<AppLogoProps> = ({ className, iconSize = 24, textSize = 
   const letters = "Seera".split("");
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={cn(`flex items-center gap-2`, className)}>
       <ChefHat
         size={iconSize}
         className="animated-logo-icon"
       />
-      <h1 className={`font-bold ${textSize} seera-text-container`}>
+      <h1 className={cn(`font-bold seera-text-container font-seera-brand`, textSize)}>
         {letters.map((letter, index) => (
           <span
             key={index}

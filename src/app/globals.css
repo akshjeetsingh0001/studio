@@ -221,3 +221,7 @@ body {
   animation-timing-function: ease-out;
 }
 
+/* New class for Seera brand font */
+.font-seera-brand {
+  font-family: Georgia, serif;
+}
