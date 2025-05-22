@@ -57,10 +57,10 @@ export default function KitchenDisplayPage() {
             const priorityA = statusOrderPriority[a.status as keyof typeof statusOrderPriority] ?? 99;
             const priorityB = statusOrderPriority[b.status as keyof typeof statusOrderPriority] ?? 99;
 
-            if (priorityA === 1 && priorityB === 1) { // For Active/PendingPayment, newest first
+            if ((a.status === 'Active' || a.status === 'PendingPayment') && (b.status === 'Active' || b.status === 'PendingPayment')) {
                  return timeB - timeA; 
             }
-            if (priorityA !== priorityB) { // Primary sort by status group
+            if (priorityA !== priorityB) { 
                 return priorityA - priorityB; 
             }
             // For Preparing, Ready, Paid, oldest first (FIFO)
@@ -143,12 +143,12 @@ export default function KitchenDisplayPage() {
           </Button>
         </div>
       </PageHeader>
-      <div className="mb-4 p-3 text-sm bg-yellow-100 border-l-4 border-yellow-400 text-yellow-700 rounded-md shadow-sm">
+      <div className="mb-4 p-3 text-sm bg-yellow-100/70 border-l-4 border-yellow-400/70 text-yellow-700/90 rounded-md shadow-sm">
         <div className="flex items-start">
-          <AlertTriangle className="h-5 w-5 mr-2.5 mt-0.5 text-yellow-500 flex-shrink-0" />
+          <AlertTriangle className="h-5 w-5 mr-2.5 mt-0.5 text-yellow-500/80 flex-shrink-0" />
           <div>
-            <strong className="font-semibold">Important Note:</strong> This KDS prototype uses browser `localStorage` for data. 
-            Orders will only appear here if managed in the same browser on this device. For live, multi-device synchronization (e.g., between a POS tablet and a separate kitchen screen), a backend database with real-time update capabilities is required.
+            <strong className="font-semibold">Important Note for this Prototype:</strong> This KDS uses browser `localStorage` for data. 
+            For real-time updates across different devices (e.g., POS tablet and kitchen screen), a backend database (like Firebase or Supabase) with real-time capabilities is required.
           </div>
         </div>
       </div>
@@ -167,11 +167,11 @@ export default function KitchenDisplayPage() {
             {kitchenOrders.map((order) => (
               <Card key={order.id} className="shadow-lg flex flex-col bg-card">
                 <CardHeader className={`p-4 text-white ${
-                    order.status === 'Active' || order.status === 'PendingPayment' ? 'bg-blue-500' : 
+                    order.status === 'Active' || order.status === 'PendingPayment' ? 'bg-primary' : 
                     order.status === 'Preparing' ? 'bg-orange-500' : 
-                    order.status === 'Ready' ? 'bg-green-500' : 
+                    order.status === 'Ready' ? 'bg-accent' : 
                     order.status === 'Paid' ? 'bg-indigo-500' :
-                    'bg-gray-400'
+                    'bg-gray-400' // Fallback, should not happen with current logic
                   }`}>
                   <CardTitle className="text-2xl font-bold">Order: {order.id}</CardTitle>
                   <div className="flex justify-between text-sm">
@@ -181,9 +181,9 @@ export default function KitchenDisplayPage() {
                    <Badge 
                      variant="secondary" 
                      className={`mt-1 w-fit self-start bg-white border ${
-                        order.status === 'Active' || order.status === 'PendingPayment' ? 'text-blue-600 border-blue-600' :
+                        order.status === 'Active' || order.status === 'PendingPayment' ? 'text-primary border-primary' :
                         order.status === 'Preparing' ? 'text-orange-600 border-orange-600' :
-                        order.status === 'Ready' ? 'text-green-600 border-green-600' :
+                        order.status === 'Ready' ? 'text-accent border-accent' :
                         order.status === 'Paid' ? 'text-indigo-600 border-indigo-600' :
                         'text-gray-600 border-gray-600'
                      }`}
