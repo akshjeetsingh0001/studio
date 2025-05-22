@@ -58,10 +58,10 @@ body {
     --chart-4: 260 60% 65%;
     --chart-5: 0 65% 60%;
 
-    /* Animated Background Gradient Colors - Light Mode (Food-Inspired) */
-    --animated-bg-light-1: 45 70% 94%;   /* Soft creamy yellow/beige */
-    --animated-bg-light-2: 30 80% 90%; /* Light warm peach */
-    --animated-bg-light-3: 80 40% 92%;   /* Very pale, desaturated soft green */
+    /* Animated Background Gradient Colors - Light Mode (Light Shades of Blue) */
+    --animated-bg-light-1: 200 80% 92%;   /* Very Pale Sky Blue */
+    --animated-bg-light-2: 210 75% 90%;   /* Soft Azure/Powder Blue */
+    --animated-bg-light-3: 220 70% 94%;   /* Light Periwinkle/Cool Blue */
 
     /* New Order Button Gradient - Light Mode */
     --button-new-order-start: 225 65% 55%; /* Primary Blue */
