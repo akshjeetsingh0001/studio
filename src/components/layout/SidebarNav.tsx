@@ -56,7 +56,7 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
   return (
     <Sidebar
       className={cn(
-        "text-sidebar-foreground bg-background/70 backdrop-blur-lg",
+        "text-sidebar-foreground bg-transparent backdrop-blur-lg",
         className
       )}
       collapsible="icon"
