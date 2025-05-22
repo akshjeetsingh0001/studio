@@ -14,7 +14,7 @@ body {
     --foreground: 220 10% 25%; /* Dark, slightly desaturated cool grey */
 
     --muted: 220 25% 94%; /* Lighter grey for muted elements */
-    --muted-foreground: 220 10% 35%; /* Softer, darker grey for muted text (WAS 45%) */
+    --muted-foreground: 220 10% 35%; /* Softer, darker grey for muted text (WAS 220 10% 45%) */
 
     --popover: 0 0% 100%; /* Clean white for popovers */
     --popover-foreground: 220 10% 25%;
@@ -42,12 +42,12 @@ body {
     --radius: 0.5rem;
 
     /* Sidebar specific theme variables - Light */
-    --sidebar-background: 220 15% 22%; /* Darker, solid cool grey/blue */
-    --sidebar-foreground: 220 20% 92%; /* Light text for sidebar */
+    --sidebar-background: transparent; /* Made transparent with backdrop blur */
+    --sidebar-foreground: 220 10% 25%; /* MODIFIED: Dark text for light mode transparent sidebar */
     --sidebar-primary: 170 55% 48%; /* Accent color (teal) for active items */
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 15% 28%; /* Slightly lighter for hover */
-    --sidebar-accent-foreground: 0 0% 100%; /* Brighter for hover - WAS 220 20% 95% */
+    --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 220 15% 18%; /* Darker border for sidebar elements */
     --sidebar-ring: 170 55% 48%;
 
@@ -100,12 +100,12 @@ body {
     --ring: 220 75% 68%; /* Primary color for focus rings */
 
     /* Sidebar specific theme variables - Dark */
-    --sidebar-background: 220 15% 10%; /* Very dark, distinct sidebar */
-    --sidebar-foreground: 220 15% 80%;
+    --sidebar-background: transparent; /* Made transparent with backdrop blur */
+    --sidebar-foreground: 220 15% 85%; /* Light text, good contrast for dark mode transparent sidebar */
     --sidebar-primary: 170 65% 60%; /* Accent for active sidebar items */
     --sidebar-primary-foreground: 220 10% 10%;
     --sidebar-accent: 220 15% 16%; /* Subtle hover for sidebar */
-    --sidebar-accent-foreground: 220 15% 95%; /* Brighter for hover - WAS 220 15% 88% */
+    --sidebar-accent-foreground: 220 15% 95%;
     --sidebar-border: 220 15% 8%;
     --sidebar-ring: 170 65% 60%;
 
@@ -220,3 +220,4 @@ body {
   animation-fill-mode: forwards; /* Retain the final state of the animation */
   animation-timing-function: ease-out;
 }
+
