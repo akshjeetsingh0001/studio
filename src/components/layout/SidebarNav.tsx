@@ -56,13 +56,13 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
   return (
     <Sidebar
       className={cn(
-        "border-r border-sidebar-border text-sidebar-foreground bg-background/70 backdrop-blur-lg", 
+        "text-sidebar-foreground bg-background/70 backdrop-blur-lg",
         className
       )}
       collapsible="icon"
       variant="sidebar"
     >
-      <div className="flex h-16 items-center justify-center border-b border-sidebar-border px-4">
+      <div className="flex h-16 items-center justify-center px-4">
          <AppLogo className="group-data-[collapsible=icon]:hidden" />
          <AppLogo iconSize={24} textSize="text-lg" className="hidden group-data-[collapsible=icon]:flex" />
       </div>
@@ -108,11 +108,11 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
         </SidebarMenu>
       </ScrollArea>
       {/* User Profile/Theme Section */}
-      <div className="mt-auto p-2 border-t border-sidebar-border">
+      <div className="mt-auto p-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               className="w-full h-auto p-1.5 flex items-center justify-start group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:aspect-square group-data-[collapsible=icon]:p-1 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               aria-label="User menu"
             >
