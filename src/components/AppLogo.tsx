@@ -13,7 +13,7 @@ const AppLogo: React.FC<AppLogoProps> = ({ className, iconSize = 24, textSize = 
     <div className={`flex items-center gap-2 ${className}`}>
       <ChefHat size={iconSize} className="text-rgb-animate animate-logo-icon-pulse" />
       <h1 className={`font-bold ${textSize}`}>
-        <span className="text-rgb-animate animate-logo-icon-pulse">Seera</span>
+        <span className="text-rgb-animate">Seera</span>
       </h1>
     </div>
   );
