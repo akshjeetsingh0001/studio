@@ -56,7 +56,7 @@ export default function TableManagementPage() {
       </PageHeader>
 
       {tableSections.length === 0 && (
-        <Card className="shadow-sm">
+        <Card className="shadow-lg">
           <CardContent className="p-6 text-center text-muted-foreground">
             No table sections or tables configured. Please set up tables in settings or via an admin interface.
           </CardContent>
@@ -64,7 +64,7 @@ export default function TableManagementPage() {
       )}
 
       {tableSections.map(section => (
-        <Card key={section.name} className="shadow-sm">
+        <Card key={section.name} className="shadow-lg">
           <CardHeader>
             <CardTitle>{section.name}</CardTitle>
           </CardHeader>
@@ -139,3 +139,4 @@ export default function TableManagementPage() {
     </div>
   );
 }
+

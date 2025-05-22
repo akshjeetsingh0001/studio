@@ -143,9 +143,9 @@ export default function KitchenDisplayPage() {
           </Button>
         </div>
       </PageHeader>
-      <div className="mb-4 p-3 text-sm bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-md shadow-sm">
+      <div className="mb-4 p-3 text-sm bg-yellow-100 border-l-4 border-yellow-400 text-yellow-700 rounded-md shadow-sm">
         <div className="flex items-start">
-          <AlertTriangle className="h-5 w-5 mr-2.5 mt-0.5 text-yellow-600 flex-shrink-0" />
+          <AlertTriangle className="h-5 w-5 mr-2.5 mt-0.5 text-yellow-500 flex-shrink-0" />
           <div>
             <strong className="font-semibold">Important Note:</strong> This KDS prototype uses browser `localStorage` for data. 
             Orders will only appear here if managed in the same browser on this device. For live, multi-device synchronization (e.g., between a POS tablet and a separate kitchen screen), a backend database with real-time update capabilities is required.

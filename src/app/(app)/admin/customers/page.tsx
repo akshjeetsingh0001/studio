@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 // Mock data for customers has been removed.
-// In a real application, this data would be fetched from a database.
 const mockCustomers: any[] = [];
 
 const getTierBadgeVariant = (tier: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -52,7 +51,7 @@ export default function CustomerManagementPage() {
         </div>
       </PageHeader>
 
-      <Card className="shadow-sm">
+      <Card className="shadow-lg">
         <CardHeader>
           <CardTitle>Customer List</CardTitle>
           <CardDescription>All registered customers and their loyalty status.</CardDescription>
@@ -121,3 +120,4 @@ export default function CustomerManagementPage() {
     </div>
   );
 }
+

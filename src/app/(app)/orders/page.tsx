@@ -16,7 +16,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { OrderItem } from '@/app/(app)/order/[id]/page'; 
 
-// Initial mock data for orders - removed to rely on localStorage or start empty.
 const initialMockOrders: MockOrder[] = [];
 
 interface MockOrder {
@@ -35,12 +34,12 @@ const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destr
     case 'active':
       return 'outline'; 
     case 'preparing':
-      return 'default'; // Using 'default' which often maps to primary color for visibility
+      return 'default'; 
     case 'ready':
-      return 'secondary'; // Using 'secondary' which can be styled distinctively
+      return 'secondary'; 
     case 'pendingpayment':
       return 'outline'; 
-    case 'paid':
+    case 'paid': // Changed to default (often primary color) for visibility
       return 'default'; 
     case 'completed':
       return 'secondary'; 
@@ -54,24 +53,22 @@ const getStatusBadgeVariant = (status: string): "default" | "secondary" | "destr
 const parseTime = (timeStr: string): number => {
   if (!timeStr) return Date.now();
   const [time, modifier] = timeStr.split(' ');
-  if (!time || !modifier) return Date.now(); // Fallback for incomplete time strings
+  if (!time || !modifier) return Date.now(); 
   let [hours, minutes] = time.split(':').map(Number);
 
-  // Handle potential NaN from parsing if time format is unexpected
   if (isNaN(hours) || isNaN(minutes)) {
       const now = new Date();
-      // Attempt to parse just hours if minutes are missing/invalid, or fallback to current time
-      if (!isNaN(hours) && modifier) { // if hours are valid but minutes are not
+      if (!isNaN(hours) && modifier) { 
         if (modifier.toUpperCase() === 'PM' && hours < 12) hours += 12;
-        if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0; // Midnight case
-        now.setHours(hours, 0, 0, 0); // Set minutes to 0 if invalid
+        if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0;
+        now.setHours(hours, 0, 0, 0); 
         return now.getTime();
       }
-      return now.getTime(); // Fallback to current time if parsing fails significantly
+      return now.getTime(); 
   }
   
   if (modifier.toUpperCase() === 'PM' && hours < 12) hours += 12;
-  if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0; // Midnight case
+  if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0; 
 
   const date = new Date();
   date.setHours(hours, minutes, 0, 0);
@@ -112,8 +109,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     loadOrders();
-     // Optional: set up an interval to refresh orders if KDS updates are frequent
-    const intervalId = setInterval(loadOrders, 5000); // Refresh every 5 seconds
+    const intervalId = setInterval(loadOrders, 5000); 
     return () => clearInterval(intervalId);
   }, [loadOrders]);
 
@@ -138,7 +134,7 @@ export default function OrdersPage() {
   };
 
   const handleCompleteOrder = (orderId: string) => {
-     handleUpdateOrderStatus(orderId, 'Completed', `Order ${orderId} marked as Completed.`, <CheckCheck className="h-4 w-4 text-blue-600" />);
+     handleUpdateOrderStatus(orderId, 'Completed', `Order ${orderId} marked as Completed. This order will now move to past orders.`, <CheckCheck className="h-4 w-4 text-blue-600" />);
   };
 
   const handleDeleteOrder = (orderId: string) => {
@@ -203,7 +199,7 @@ export default function OrdersPage() {
             <TabsTrigger value="completed">Completed/Past Orders ({completedOrders.length})</TabsTrigger>
           </TabsList>
           <TabsContent value="active">
-            <Card className="shadow-sm">
+            <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle>Active Orders</CardTitle>
                 <CardDescription>Orders currently in progress, preparing, ready, pending payment, or paid. Sorted by newest first.</CardDescription>
@@ -220,7 +216,7 @@ export default function OrdersPage() {
             </Card>
           </TabsContent>
           <TabsContent value="completed">
-            <Card className="shadow-sm">
+            <Card className="shadow-lg">
               <CardHeader>
                 <CardTitle>Completed & Past Orders</CardTitle>
                 <CardDescription>Orders that have been completed or cancelled.</CardDescription>

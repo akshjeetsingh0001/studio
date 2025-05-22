@@ -24,7 +24,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"; // AlertDialogTrigger removed as it's not used directly here
+} from "@/components/ui/alert-dialog"; 
 
 interface MenuItem {
   id: string;
@@ -173,24 +173,22 @@ export default function MenuManagementPage() {
         if (savedItemsRaw) {
           const parsedItems = JSON.parse(savedItemsRaw);
           if (Array.isArray(parsedItems) && parsedItems.length > 0) {
-            setMenuItems(parsedItems); // Use items from localStorage if they are valid and non-empty
+            setMenuItems(parsedItems); 
           } else {
-            // localStorage was empty or invalid array
             setMenuItems(initialMockMenuItems);
-            updateLocalStorage(initialMockMenuItems); // Save the defaults
+            updateLocalStorage(initialMockMenuItems); 
           }
         } else {
-          // No items in localStorage
           setMenuItems(initialMockMenuItems);
-          updateLocalStorage(initialMockMenuItems); // Save the defaults
+          updateLocalStorage(initialMockMenuItems); 
         }
       } catch (e) {
         console.error("Failed to load menu items from localStorage", e);
-        setMenuItems(initialMockMenuItems); // Fallback on error
-        updateLocalStorage(initialMockMenuItems); // Attempt to save defaults on error
+        setMenuItems(initialMockMenuItems); 
+        updateLocalStorage(initialMockMenuItems); 
       }
     } else {
-        setMenuItems(initialMockMenuItems); // Fallback for non-browser environments
+        setMenuItems(initialMockMenuItems); 
     }
   }, []);
 
@@ -321,7 +319,7 @@ export default function MenuManagementPage() {
         </TabsList>
 
         <TabsContent value="items">
-          <Card className="shadow-sm">
+          <Card className="shadow-lg">
             <CardHeader>
               <CardTitle>Menu Items</CardTitle>
               <CardDescription>Manage all individual items on your menu.</CardDescription>
@@ -390,7 +388,7 @@ export default function MenuManagementPage() {
         </TabsContent>
 
         <TabsContent value="categories">
-          <Card className="shadow-sm">
+          <Card className="shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Categories</CardTitle>
@@ -435,7 +433,7 @@ export default function MenuManagementPage() {
         </TabsContent>
 
         <TabsContent value="modifiers">
-          <Card className="shadow-sm">
+          <Card className="shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Modifiers</CardTitle>

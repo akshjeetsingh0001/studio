@@ -130,7 +130,7 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {summaryCards.map((card) => (
-          <Card key={card.title} className="shadow-sm hover:shadow-md transition-shadow">
+          <Card key={card.title} className="shadow-sm hover:shadow-md transition-shadow duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
               <card.icon className="h-4 w-4 text-muted-foreground" />
@@ -148,7 +148,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="lg:col-span-2 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="lg:col-span-2 shadow-lg hover:shadow-xl transition-shadow duration-200">
           <CardHeader>
             <CardTitle>Table Status</CardTitle>
             <CardDescription>Quick view of current table occupancy. (Table data managed on Tables page)</CardDescription>
@@ -175,7 +175,7 @@ export default function DashboardPage() {
            </CardContent>
         </Card>
 
-        <Card className="shadow-sm hover:shadow-md transition-shadow">
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-200">
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
             <CardDescription>Access common tasks quickly.</CardDescription>
@@ -192,7 +192,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-       <Card className="shadow-sm hover:shadow-md transition-shadow">
+       <Card className="shadow-lg hover:shadow-xl transition-shadow duration-200">
         <CardHeader>
           <CardTitle>Promotions & Specials</CardTitle>
           <CardDescription>Featured items from your menu.</CardDescription>
@@ -230,3 +230,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
