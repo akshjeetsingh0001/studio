@@ -56,7 +56,12 @@ body {
     --chart-2: 170 55% 42%; 
     --chart-3: 35 70% 60%;  
     --chart-4: 260 60% 65%; 
-    --chart-5: 0 65% 60%;   
+    --chart-5: 0 65% 60%;
+
+    /* Animated Background Gradient Colors - Light Mode */
+    --animated-bg-light-1: 220 60% 98%; /* Very light, soft blue */
+    --animated-bg-light-2: 30 80% 97%;  /* Very light, soft peach */
+    --animated-bg-light-3: 180 50% 98%; /* Very light, soft aqua */
   }
 
   .dark {
@@ -105,8 +110,19 @@ body {
     --chart-2: 170 65% 55%; 
     --chart-3: 40 80% 65%;  
     --chart-4: 265 65% 70%; 
-    --chart-5: 0 70% 65%;   
+    --chart-5: 0 70% 65%;
+
+    /* Animated Background Gradient Colors - Dark Mode */
+    --animated-bg-dark-1: 220 25% 10%; /* Deep, dark blue */
+    --animated-bg-dark-2: 260 30% 12%; /* Deep, dark purple */
+    --animated-bg-dark-3: 200 20% 9%;  /* Very dark, slightly desaturated teal */
   }
+}
+
+@keyframes liveBackgroundAnimation {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 @layer base {
@@ -114,8 +130,33 @@ body {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground; /* Keep text-foreground, remove bg-background */
     font-feature-settings: "rlig" 1, "calt" 1;
+
+    /* Light mode animated background */
+    background: linear-gradient(135deg, 
+      hsl(var(--animated-bg-light-1)), 
+      hsl(var(--animated-bg-light-2)), 
+      hsl(var(--animated-bg-light-3)),
+      hsl(var(--animated-bg-light-2)), /* Add intermediate step for smoother looping */
+      hsl(var(--animated-bg-light-1))
+    );
+    background-size: 400% 400%;
+    animation: liveBackgroundAnimation 30s ease infinite;
+  }
+
+  .dark body {
+    /* text-foreground will be inherited or set by .dark's --foreground from the first @layer base */
+    /* Dark mode animated background */
+    background: linear-gradient(135deg, 
+      hsl(var(--animated-bg-dark-1)), 
+      hsl(var(--animated-bg-dark-2)), 
+      hsl(var(--animated-bg-dark-3)),
+      hsl(var(--animated-bg-dark-2)), /* Add intermediate step for smoother looping */
+      hsl(var(--animated-bg-dark-1))
+    );
+    background-size: 400% 400%;
+    animation: liveBackgroundAnimation 30s ease infinite;
   }
 }
 
