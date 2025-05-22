@@ -77,7 +77,7 @@ export default function TableManagementPage() {
                 return (
                     <Card 
                     key={table.id} 
-                    className={`shadow-sm hover:shadow-lg transition-shadow duration-200 ease-in-out border-2 ${statusProps.borderColor} ${statusProps.bgColor}`}
+                    className={`shadow-sm hover:shadow-xl transition-all duration-200 ease-in-out border-2 ${statusProps.borderColor} ${statusProps.bgColor} hover:scale-[1.02] active:scale-[0.98]`}
                     >
                     <CardHeader className="p-4">
                         <div className="flex justify-between items-center">
