@@ -2,8 +2,7 @@
 'use client';
 
 import type React from 'react';
-import { useState, useEffect, useCallback }
-from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -15,9 +14,14 @@ import { PlusCircle, MinusCircle, Trash2, ShoppingCart, Zap, Lightbulb, DollarSi
 import { getUpsellSuggestions, type GetUpsellSuggestionsInput } from '@/ai/flows/upsell-suggestions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
-// Fallback menu items - removed to rely on localStorage or start empty.
-const initialMockMenuItemsForOrderPage: MenuItem[] = [];
+interface MenuItemVariant {
+  size?: string;
+  type?: string; 
+  price: number;
+  idSuffix: string;
+}
 
 interface MenuItem {
   id: string;
@@ -25,9 +29,10 @@ interface MenuItem {
   category: string;
   price: number;
   imageUrl: string;
-  description: string;
+  description?: string;
   availability: boolean;
   'data-ai-hint'?: string;
+  variants?: MenuItemVariant[];
 }
 
 export interface OrderItem extends MenuItem {
@@ -36,6 +41,8 @@ export interface OrderItem extends MenuItem {
 
 const USER_MENU_ITEMS_KEY = 'dineSwiftMenuItems';
 const USER_SAVED_ORDERS_KEY = 'dineSwiftUserSavedOrders';
+
+const initialMockMenuItemsForFallback: MenuItem[] = []; // Default to empty if localStorage fails catastrophically
 
 export default function OrderEntryPage() {
   const params = useParams();
@@ -49,6 +56,9 @@ export default function OrderEntryPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
+
+  const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
+  const [selectedItemForVariant, setSelectedItemForVariant] = useState<MenuItem | null>(null);
 
   const pageTitle = pageParamId === 'new' ? 'New Order' : `Order for ${pageParamId?.toUpperCase()}`;
   const pageDescription = pageParamId === 'new' ? '' : `Manage order for Table/ID: ${pageParamId?.toUpperCase()}`;
@@ -68,19 +78,21 @@ export default function OrderEntryPage() {
               imageUrl: item.imageUrl || 'https://placehold.co/150x100.png',
               description: item.description || '',
               availability: typeof item.availability === 'boolean' ? item.availability : true,
-              'data-ai-hint': item['data-ai-hint'] || `${(item.category || '').toLowerCase()} food`
+              'data-ai-hint': item['data-ai-hint'] || `${(item.category || '').toLowerCase()} food`,
+              variants: item.variants || undefined,
             })));
             return;
           }
         }
-         // If localStorage is empty or items are not an array, set empty menu.
-        setMenuItems([]);
+        // If localStorage is empty or items are not an array or empty array, use fallback and potentially log an error or use default mocks.
+        // For now, we'll clear to an empty array if nothing valid is found.
+        setMenuItems(initialMockMenuItemsForFallback);
       } catch (e) {
         console.error("Failed to load menu items from localStorage for order page", e);
-        setMenuItems([]); // Fallback to empty array on error
+        setMenuItems(initialMockMenuItemsForFallback); 
       }
     } else {
-       setMenuItems([]); // Fallback for SSR or non-browser
+       setMenuItems(initialMockMenuItemsForFallback); 
     }
   }, []);
 
@@ -88,15 +100,49 @@ export default function OrderEntryPage() {
     loadMenuItemsFromStorage();
   }, [loadMenuItemsFromStorage]);
 
-  const addItemToOrder = (item: MenuItem) => {
-    setCurrentOrder((prevOrder) => {
-      const existingItem = prevOrder.find((orderItem) => orderItem.id === item.id);
+  const handleItemClick = (item: MenuItem) => {
+    if (!item.availability) {
+      toast({
+        title: "Item Unavailable",
+        description: `${item.name} is currently not available.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (item.variants && item.variants.length > 0) {
+      setSelectedItemForVariant(item);
+      setIsVariantDialogOpen(true);
+    } else {
+      addItemToOrder(item);
+    }
+  };
+
+  const handleVariantSelected = (baseItem: MenuItem, variant: MenuItemVariant) => {
+    const orderItem: OrderItem = {
+      ...baseItem,
+      id: `${baseItem.id}${variant.idSuffix}`, 
+      name: `${baseItem.name} (${variant.size || variant.type})`,
+      price: variant.price,
+      quantity: 1,
+      variants: undefined, 
+    };
+    addItemToOrder(orderItem, true);
+    setIsVariantDialogOpen(false);
+    setSelectedItemForVariant(null);
+  };
+
+  const addItemToOrder = (itemToAdd: OrderItem | MenuItem, isVariant: boolean = false) => {
+     setCurrentOrder((prevOrder) => {
+      const existingItem = prevOrder.find((orderItem) => orderItem.id === itemToAdd.id);
+      
       if (existingItem) {
         return prevOrder.map((orderItem) =>
-          orderItem.id === item.id ? { ...orderItem, quantity: orderItem.quantity + 1 } : orderItem
+          orderItem.id === itemToAdd.id ? { ...orderItem, quantity: orderItem.quantity + 1 } : orderItem
         );
       }
-      return [...prevOrder, { ...item, quantity: 1 }];
+      const newItem = itemToAdd as OrderItem;
+      return [...prevOrder, { ...newItem, quantity: newItem.quantity || 1 }];
     });
   };
 
@@ -120,7 +166,11 @@ export default function OrderEntryPage() {
     return currentOrder.reduce((total, item) => total + item.price * item.quantity, 0);
   };
 
-  const allCategories = ['All', ...Array.from(new Set(menuItems.map(item => item.category)))];
+  const allCategories = ['All', ...Array.from(new Set(menuItems.map(item => item.category)))].sort((a,b) => {
+      if (a === 'All') return -1;
+      if (b === 'All') return 1;
+      return a.localeCompare(b);
+  });
 
   const availableMenuItems = menuItems.filter(item => item.availability);
 
@@ -131,7 +181,6 @@ export default function OrderEntryPage() {
   const categoriesToDisplay = selectedCategory === 'All'
     ? Array.from(new Set(filteredMenuItems.map(item => item.category))).sort()
     : [selectedCategory];
-
 
   const fetchAiSuggestions = useCallback(async () => {
     if (currentOrder.length === 0) {
@@ -323,14 +372,17 @@ export default function OrderEntryPage() {
         const savedOrders = JSON.parse(savedOrdersRaw);
         const orderToEdit = savedOrders.find((order: any) => order.id.toLowerCase() === pageParamId.toLowerCase() || order.table.toLowerCase() === pageParamId.toLowerCase());
         if (orderToEdit && orderToEdit.orderDetails) {
-          setCurrentOrder(orderToEdit.orderDetails);
+          const validatedOrderDetails = orderToEdit.orderDetails.map((detail: any) => ({
+            ...detail,
+            quantity: detail.quantity || 1, 
+          }));
+          setCurrentOrder(validatedOrderDetails);
         } else if (orderToEdit) {
            console.warn(`Order ${pageParamId} found but no detailed items. Starting fresh for this ID.`);
         }
       }
     }
   }, [pageParamId]);
-
 
   if (!pageParamId) {
     return (
@@ -340,9 +392,81 @@ export default function OrderEntryPage() {
     );
   }
 
+  const getDisplayPrice = (item: MenuItem) => {
+    if (item.variants && item.variants.length > 0) {
+      const prices = item.variants.map(v => v.price);
+      const minPrice = Math.min(...prices);
+      if (item.variants.length === 1) return `₹${minPrice.toFixed(2)}`;
+      const maxPrice = Math.max(...prices);
+      return `₹${minPrice.toFixed(2)} - ₹${maxPrice.toFixed(2)}`;
+    }
+    return `₹${item.price.toFixed(2)}`;
+  };
+
+  const renderVariantSelectionDialog = () => {
+    if (!selectedItemForVariant || !selectedItemForVariant.variants) return null;
+
+    const variants = selectedItemForVariant.variants;
+    // Determine if variants are simple sizes (S, M, L) or similar short lists (e.g., Regular, Large)
+    const useHorizontalLayout = variants.length > 0 && variants.length <= 3 && variants.every(v => v.size && v.size.length < 10);
+
+    return (
+      <Dialog open={isVariantDialogOpen} onOpenChange={(open) => {
+          if (!open) {
+              setIsVariantDialogOpen(false);
+              setSelectedItemForVariant(null);
+          }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {`Select ${variants.some(v => v.size) ? 'size' : 'option'} for ${selectedItemForVariant.name}`}
+            </DialogTitle>
+            <DialogDescription>
+              Choose one of the available options below.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {useHorizontalLayout ? (
+            <div className="flex justify-center space-x-2 sm:space-x-3 py-4">
+              {variants.map((variant) => (
+                <Button
+                  key={variant.idSuffix}
+                  variant="default"
+                  className="flex-1 flex-col h-auto p-2 sm:p-3 text-center"
+                  onClick={() => handleVariantSelected(selectedItemForVariant, variant)}
+                >
+                  <span className="text-base sm:text-lg font-semibold">{variant.size ? variant.size.charAt(0).toUpperCase() : (variant.type ? variant.type.charAt(0).toUpperCase() : 'Opt')}</span>
+                  <span className="text-xs sm:text-sm">₹{variant.price.toFixed(2)}</span>
+                </Button>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 py-4">
+              {variants.map((variant) => (
+                <Button
+                  key={variant.idSuffix}
+                  variant="outline"
+                  className="w-full justify-between h-auto py-3 text-left"
+                  onClick={() => handleVariantSelected(selectedItemForVariant, variant)}
+                >
+                  <span>{variant.size || variant.type}</span>
+                  <span className="font-semibold">₹{variant.price.toFixed(2)}</span>
+                </Button>
+              ))}
+            </div>
+          )}
+          <DialogFooter>
+              <Button variant="ghost" onClick={() => { setIsVariantDialogOpen(false); setSelectedItemForVariant(null); }}>Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]"> 
-      <PageHeader title={pageTitle} description={pageDescription}>
+      <PageHeader title={pageTitle} description={pageParamId === 'new' ? '' : pageDescription}>
          <Button variant="outline" size="sm" onClick={handleSaveOrder} disabled={currentOrder.length === 0}>
             <DollarSign className="mr-2 h-4 w-4" />
             Save Order
@@ -367,31 +491,31 @@ export default function OrderEntryPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
-        <Card className="lg:col-span-2 flex flex-col shadow-lg">
+      <div className="flex flex-col lg:flex-row gap-6 flex-1 overflow-hidden">
+        <Card className="lg:w-2/3 flex flex-col shadow-lg">
           <CardContent className="flex-1 overflow-hidden p-0">
-            <ScrollArea className="h-full p-6 pt-0">
-              {categoriesToDisplay.map(category => {
-                const itemsInCategory = filteredMenuItems.filter(item => item.category === category);
-                if (itemsInCategory.length === 0 && selectedCategory !== 'All') return null; 
+            <ScrollArea className="h-full p-6 pt-4"> {/* Added pt-4 to give some space below category buttons */}
+              {categoriesToDisplay.map(catName => {
+                const itemsInCategory = filteredMenuItems.filter(item => item.category === catName);
+                if (itemsInCategory.length === 0 && selectedCategory !== 'All' && availableMenuItems.length > 0) return null; 
 
                 return (
-                  <div key={category} className="mb-6">
+                  <div key={catName} className="mb-6">
                      { selectedCategory === 'All' && (
-                        <h3 className="text-xl font-semibold mb-4 pb-2 border-b border-border sticky top-0 bg-card py-2 z-10">{category}</h3>
+                        <h3 className="text-xl font-semibold mb-4 pb-2 border-b border-border sticky top-0 bg-card py-2 z-10">{catName}</h3>
                      )}
                     {itemsInCategory.length === 0 && selectedCategory !== 'All' && (
-                       <p className="text-muted-foreground col-span-full">No available items in this category.</p>
+                       <p className="text-muted-foreground col-span-full text-center py-4">No available items in this category.</p>
                     )}
-                     {itemsInCategory.length === 0 && selectedCategory === 'All' && availableMenuItems.length > 0 && (
-                       <p className="text-muted-foreground col-span-full">No items in category &quot;{category}&quot;. Check other categories or &quot;All&quot;.</p>
+                    {itemsInCategory.length === 0 && selectedCategory === 'All' && availableMenuItems.length > 0 && (
+                      <p className="text-muted-foreground col-span-full text-center py-4">No items found in category "{catName}".</p>
                     )}
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                       {itemsInCategory.map((item) => (
                         <Card
                           key={item.id}
-                          className="flex flex-col overflow-hidden hover:shadow-md transition-shadow transition-transform duration-150 ease-in-out hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                          onClick={() => addItemToOrder(item)}
+                          className="flex flex-col overflow-hidden hover:shadow-md transition-all duration-150 ease-in-out hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                          onClick={() => handleItemClick(item)}
                         >
                           <div className="relative w-full h-32">
                             <Image 
@@ -405,7 +529,7 @@ export default function OrderEntryPage() {
                           <div className="p-2 flex flex-col flex-grow">
                             <div className="flex-grow mb-1">
                               <CardTitle className="text-base font-semibold mb-0.5">{item.name}</CardTitle>
-                              <p className="text-sm font-bold text-primary">${item.price.toFixed(2)}</p>
+                              <p className="text-sm font-bold text-primary">{getDisplayPrice(item)}</p>
                             </div>
                           </div>
                         </Card>
@@ -414,17 +538,17 @@ export default function OrderEntryPage() {
                   </div>
                 );
               })}
-              {filteredMenuItems.length === 0 && selectedCategory !== 'All' && (
+              {filteredMenuItems.length === 0 && selectedCategory !== 'All' && availableMenuItems.length > 0 && (
                 <p className="text-center text-muted-foreground py-8">No available menu items match your criteria.</p>
               )}
-               {availableMenuItems.length === 0 && selectedCategory === 'All' && (
+               {availableMenuItems.length === 0 && (
                  <p className="text-center text-muted-foreground py-8">No items available in the menu. Please add items via Menu Management.</p>
               )}
             </ScrollArea>
           </CardContent>
         </Card>
 
-        <div className="flex flex-col gap-6 overflow-hidden">
+        <div className="lg:w-1/3 flex flex-col gap-6 overflow-hidden">
           <Card className="flex-1 flex flex-col shadow-lg max-h-[65%]"> 
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -443,14 +567,14 @@ export default function OrderEntryPage() {
                       <li key={item.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-md">
                         <div>
                           <p className="font-medium">{item.name}</p>
-                          <p className="text-xs text-muted-foreground">${item.price.toFixed(2)} x {item.quantity}</p>
+                          <p className="text-xs text-muted-foreground">₹{item.price.toFixed(2)} x {item.quantity}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Button variant="ghost" size="icon" onClick={() => removeItemFromOrder(item.id)} className="h-7 w-7">
                             <MinusCircle className="h-4 w-4" />
                           </Button>
                           <span className="w-4 text-center">{item.quantity}</span>
-                          <Button variant="ghost" size="icon" onClick={() => addItemToOrder(item)} className="h-7 w-7">
+                          <Button variant="ghost" size="icon" onClick={() => addItemToOrder(item, true)} className="h-7 w-7">
                             <PlusCircle className="h-4 w-4" />
                           </Button>
                            <Button variant="ghost" size="icon" onClick={() => completelyRemoveItem(item.id)} className="h-7 w-7 text-destructive hover:text-destructive/80">
@@ -469,7 +593,7 @@ export default function OrderEntryPage() {
                 <CardContent className="p-4">
                   <div className="flex justify-between items-center font-semibold text-lg">
                     <span>Total:</span>
-                    <span>${calculateTotal().toFixed(2)}</span>
+                    <span>₹{calculateTotal().toFixed(2)}</span>
                   </div>
                 </CardContent>
               </>
@@ -501,10 +625,13 @@ export default function OrderEntryPage() {
                         variant="outline" 
                         className="w-full justify-start text-left h-auto py-2 hover:border-accent hover:text-accent"
                         onClick={() => {
-                          const suggestedItem = menuItems.find(mi => mi.availability && suggestion.toLowerCase().includes(mi.name.toLowerCase()));
-                          if (suggestedItem) {
-                            addItemToOrder(suggestedItem);
-                            toast({ title: "Added to order!", description: `${suggestedItem.name} was added from AI suggestion.`});
+                          const suggestedBaseItem = menuItems.find(mi => 
+                            mi.availability && suggestion.toLowerCase().includes(mi.name.toLowerCase())
+                          );
+                          
+                          if (suggestedBaseItem) {
+                            handleItemClick(suggestedBaseItem); 
+                            toast({ title: "Suggestion added!", description: `Considered: ${suggestion}. Please select options if prompted.`});
                           } else {
                              toast({ title: "Suggestion", description: `Consider: ${suggestion}`});
                           }
@@ -521,6 +648,8 @@ export default function OrderEntryPage() {
           </Card>
         </div>
       </div>
+      {renderVariantSelectionDialog()}
     </div>
   );
 }
+

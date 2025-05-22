@@ -19,7 +19,6 @@ import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';
 
-// Schema for form validation
 const menuItemSchema = z.object({
   name: z.string().min(3, { message: "Item name must be at least 3 characters." }),
   category: z.string().min(1, { message: "Category is required." }),
@@ -32,8 +31,24 @@ const menuItemSchema = z.object({
 type MenuItemFormData = z.infer<typeof menuItemSchema>;
 
 const USER_MENU_ITEMS_KEY = 'dineSwiftMenuItems';
-// Also used in menu/page.tsx to list categories, could be shared
-const initialMockCategories = ['Appetizers', 'Main Course', 'Sides', 'Drinks', 'Desserts', 'New Category'];
+
+const initialMockCategories = [
+    'PIZZAS - CLASSIC',
+    'PIZZAS - SIMPLE',
+    'PIZZAS - PREMIUM',
+    'PIZZAS - SPECIAL',
+    'PIZZAS - SINGLES',
+    'PIZZAS - DOUBLES',
+    'EXTRAS',
+    'SANDWICHES',
+    'PASTA',
+    'FRIES',
+    'BURGERS',
+    'KUHLAD SPECIALS',
+    'SIDES',
+    'DIPS',
+    // 'New Category' // Option for manual entry not needed if dynamic
+];
 
 
 export default function AddNewMenuItemPage() {
@@ -55,12 +70,16 @@ export default function AddNewMenuItemPage() {
 
   const onSubmit = (data: MenuItemFormData) => {
     setIsLoading(true);
-    console.log('New Menu Item Data:', data);
+    
+    const categoryCode = data.category.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4) || 'GNRL';
+    const nameCode = data.name.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3) || 'ITM';
+    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
 
     const newItem = {
-      id: `ITEM${Date.now().toString().slice(-6)}`, // Generate a unique ID
+      id: `ITEM_${categoryCode}_${nameCode}_${randomSuffix}`,
       ...data,
-      imageUrl: data.imageUrl || `https://placehold.co/100x100.png?text=${data.name.substring(0,2)}`, // Default placeholder
+      imageUrl: data.imageUrl || `https://placehold.co/100x100.png?text=${data.name.substring(0,2)}`, 
+      'data-ai-hint': `${data.category.toLowerCase()} food`,
     };
 
     try {
@@ -117,10 +136,9 @@ export default function AddNewMenuItemPage() {
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {initialMockCategories.map(cat => (
+                    {initialMockCategories.sort((a,b) => a.localeCompare(b)).map(cat => (
                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                     ))}
-                    {/* Consider adding an option to create a new category on the fly */}
                   </SelectContent>
                 </Select>
                 {form.formState.errors.category && <p className="text-sm text-destructive mt-1">{form.formState.errors.category.message}</p>}

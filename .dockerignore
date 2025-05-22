@@ -2,22 +2,46 @@
 .git
 .gitignore
 
-# Node.js modules
+# Node modules
 node_modules
 
-# Next.js build output and cache
+# Next.js build outputs (covered by standalone copy)
 .next
 
-# Development environment files
+# Local environment files - these should be passed at runtime, not baked into the image
 .env
 .env*.local
+.env.development
+.env.production
+.env.test
+*.env
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE/Editor specific
 .vscode
+*.swp
+*~
+
+# Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+logs
+*.log
 
-# Other build outputs or temporary files
-build
-dist
+# Coverage directory
 coverage
-*.tgz
+
+# Docker files themselves
+Dockerfile
+.dockerignore
+
+# Temp files
+tmp
+
+# Other build artifacts if any
+dist
+build

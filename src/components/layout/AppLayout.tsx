@@ -5,31 +5,35 @@ import type React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { SidebarNav } from './SidebarNav';
 import { primaryNavItems, secondaryNavItems } from '@/config/nav';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Menu as MenuIcon } from 'lucide-react'; // Added MenuIcon
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Button } from '@/components/ui/button';
+
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (isLoading) {
-      return; // Don't perform redirects until auth state is resolved
+      return; 
     }
 
     if (!isAuthenticated) {
       if (pathname !== '/login') {
         router.replace('/login');
       }
-      return; // Stop further checks if not authenticated
+      return; 
     }
 
-    // User is authenticated
+    
     if (user) {
-      if (pathname === '/login') { // Authenticated but on login page
+      if (pathname === '/login') { 
         if (user.role === 'kitchen') {
           router.replace('/kitchen');
         } else {
@@ -39,13 +43,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         if (pathname !== '/kitchen') {
           router.replace('/kitchen');
         }
-      } else { // User is admin or other non-kitchen role
+      } else { 
         if (pathname === '/kitchen') {
           router.replace('/dashboard');
         }
       }
     } else {
-      // Authenticated but no user object? Should not happen. Fallback to login.
+      
       if (pathname !== '/login') {
         router.replace('/login');
       }
@@ -60,7 +64,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // If not authenticated and not on login page, useEffect will redirect. Show loader.
+  
   if (!isAuthenticated && pathname !== '/login') {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -70,9 +74,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // If authenticated, user object should exist for role-based rendering.
+  
   if (isAuthenticated && user) {
-    // If authenticated and on login page, useEffect will redirect. Show loader.
+    
     if (pathname === '/login') {
         return (
             <div className="flex h-screen items-center justify-center">
@@ -82,9 +86,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         );
     }
 
-    // Handle Kitchen role
+    
     if (user.role === 'kitchen') {
-      // If not yet on /kitchen page, useEffect will redirect. Show loader.
+      
       if (pathname !== '/kitchen') {
         return (
           <div className="flex h-screen items-center justify-center">
@@ -93,7 +97,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
         );
       }
-      // Correct page for kitchen user: render KDS content full-screen
+      
       return (
         <div className="animate-fadeIn h-screen overflow-y-auto bg-muted/30">
           {children}
@@ -101,8 +105,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       );
     }
     
-    // Handle Admin/Other roles
-    // If admin is trying to access /kitchen, useEffect will redirect. Show loader.
+    
     if (user.role !== 'kitchen' && pathname === '/kitchen') {
       return (
         <div className="flex h-screen items-center justify-center">
@@ -112,13 +115,24 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       );
     }
 
-    // Default layout for admin/other authenticated users
+    
     const allNavItems = [...primaryNavItems, ...secondaryNavItems];
     return (
-      <SidebarProvider defaultOpen={true}>
+      <SidebarProvider defaultOpen={!isMobile}>
           <SidebarNav navItemGroups={allNavItems} />
           <SidebarInset className="flex flex-col">
-            <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+            {isMobile && (
+              <div className="sticky top-0 z-20 flex h-16 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm md:hidden">
+                {/* Placeholder for AppLogo or Title if needed */}
+                <div></div> 
+                <SidebarTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <MenuIcon className="h-6 w-6" />
+                  </Button>
+                </SidebarTrigger>
+              </div>
+            )}
+            <main className={`flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 ${isMobile ? 'pt-20' : ''}`}>
               {children}
             </main>
           </SidebarInset>
@@ -126,14 +140,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // Fallback for any state not covered above (e.g. on login page when not authenticated)
-  // AppLayout is used by src/app/(app)/layout.tsx which is for authenticated routes.
-  // The login page has its own (or no) layout.
-  // So, if we reach here, it's likely an edge case or the login page itself (if AppLayout was misapplied).
-  // For authenticated routes, the conditions above should cover rendering or redirection.
-  // If !isAuthenticated and pathname IS '/login', children (the login page) should render without AppLayout.
-  // This indicates a potential misapplication of AppLayout if it ever tries to render the login page.
-  // However, given the (app) route group structure, this path should primarily handle authenticated states.
+  
   return (
     <div className="flex h-screen items-center justify-center">
       <Loader2 className="h-8 w-8 animate-spin text-primary" />

@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { BarChart3, DollarSign, Layers, ShoppingBag, Users, Utensils } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import type { OrderItem } from '@/app/(app)/order/[id]/page'; // For order details type
+import type { OrderItem } from '@/app/(app)/order/[id]/page'; 
 
 interface MenuItem {
   id: string;
@@ -36,7 +36,6 @@ interface MockOrder {
 const USER_MENU_ITEMS_KEY = 'dineSwiftMenuItems';
 const USER_SAVED_ORDERS_KEY = 'dineSwiftUserSavedOrders';
 
-// Initial mock data for table statuses - removed for dynamic behavior or empty state
 const initialTableStatuses: { id: string; status: string; items: number; server: string }[] = [];
 
 const quickActions = [
@@ -56,12 +55,11 @@ export default function DashboardPage() {
 
   const loadDashboardData = useCallback(() => {
     if (typeof window !== 'undefined') {
-      // Load orders for summary cards
       try {
         const savedOrdersRaw = localStorage.getItem(USER_SAVED_ORDERS_KEY);
         if (savedOrdersRaw) {
           const savedOrders: MockOrder[] = JSON.parse(savedOrdersRaw);
-          const activeOrders = savedOrders.filter(order => ['Active', 'Preparing', 'PendingPayment'].includes(order.status));
+          const activeOrders = savedOrders.filter(order => ['Active', 'Preparing', 'PendingPayment', 'Ready'].includes(order.status));
           setOpenChecksCount(activeOrders.length);
           setTotalOrdersCount(savedOrders.length);
 
@@ -84,7 +82,6 @@ export default function DashboardPage() {
         setCoversServed(0);
       }
 
-      // Load menu items for promotions
       try {
         const menuItemsRaw = localStorage.getItem(USER_MENU_ITEMS_KEY);
         if (menuItemsRaw) {
@@ -105,10 +102,6 @@ export default function DashboardPage() {
         console.error("Failed to load menu items for dashboard promotions", e);
         setPromotionalItems([]);
       }
-      // For table statuses, it would ideally fetch from a backend or more complex localStorage state.
-      // Since table specific orders are in `USER_SAVED_ORDERS_KEY`, a more complex derivation is needed.
-      // For now, it will show an empty state or be explicitly managed elsewhere.
-      // Setting to empty based on removal of initialTableStatuses.
       setTableStatuses([]);
     }
   }, []);
@@ -137,7 +130,7 @@ export default function DashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {summaryCards.map((card) => (
-          <Card key={card.title} className="shadow-sm hover:shadow-md transition-shadow">
+          <Card key={card.title} className="shadow-sm hover:shadow-md transition-shadow duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
               <card.icon className="h-4 w-4 text-muted-foreground" />
@@ -155,7 +148,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="lg:col-span-2 shadow-sm hover:shadow-md transition-shadow">
+        <Card className="lg:col-span-2 shadow-lg hover:shadow-xl transition-shadow duration-200">
           <CardHeader>
             <CardTitle>Table Status</CardTitle>
             <CardDescription>Quick view of current table occupancy. (Table data managed on Tables page)</CardDescription>
@@ -182,7 +175,7 @@ export default function DashboardPage() {
            </CardContent>
         </Card>
 
-        <Card className="shadow-sm hover:shadow-md transition-shadow">
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-200">
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
             <CardDescription>Access common tasks quickly.</CardDescription>
@@ -199,7 +192,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-       <Card className="shadow-sm hover:shadow-md transition-shadow">
+       <Card className="shadow-lg hover:shadow-xl transition-shadow duration-200">
         <CardHeader>
           <CardTitle>Promotions & Specials</CardTitle>
           <CardDescription>Featured items from your menu.</CardDescription>
@@ -228,6 +221,7 @@ export default function DashboardPage() {
               <Image src="https://placehold.co/600x400.png" alt="Placeholder Promotion" layout="fill" objectFit="cover" data-ai-hint="food restaurant" />
                <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <h3 className="text-white text-xl font-semibold">More Coming Soon!</h3>
+                <p className="text-green-400 text-lg">Check back later</p>
               </div>
             </div>
           )}
@@ -236,3 +230,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

@@ -196,7 +196,7 @@ export default function ReportsPage() {
       </PageHeader>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card className="shadow-sm">
+        <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>Sales Over Time</CardTitle>
             <CardDescription>
@@ -220,7 +220,7 @@ export default function ReportsPage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm">
+        <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>Top Selling Items</CardTitle>
             <CardDescription>
@@ -246,7 +246,7 @@ export default function ReportsPage() {
           </CardContent>
         </Card>
       </div>
-       <Card className="shadow-sm">
+       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle>Key Performance Indicators (KPIs)</CardTitle>
         </CardHeader>
@@ -265,3 +265,4 @@ export default function ReportsPage() {
     </div>
   );
 }
+

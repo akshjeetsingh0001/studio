@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Save, Undo, Users, CreditCard, Printer,Percent } from 'lucide-react';
+import { Save, Undo, Users, CreditCard, Printer,Percent, PlusCircle as PlusCircleIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from '@/lib/utils';
 
@@ -35,7 +35,7 @@ export default function SettingsPage() {
         </TabsList>
 
         <TabsContent value="general">
-          <Card className="shadow-sm">
+          <Card className="shadow-lg">
             <CardHeader>
               <CardTitle>General Settings</CardTitle>
               <CardDescription>Basic information and operational settings for your restaurant.</CardDescription>
@@ -77,7 +77,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="taxes">
-          <Card className="shadow-sm">
+          <Card className="shadow-lg">
             <CardHeader>
               <CardTitle>Tax Rates</CardTitle>
               <CardDescription>Manage tax rates applicable to your sales.</CardDescription>
@@ -92,7 +92,7 @@ export default function SettingsPage() {
                   <Label htmlFor="salesTaxRate">Rate (%)</Label>
                   <Input id="salesTaxRate" type="number" defaultValue="8.25" />
                 </div>
-                <Button variant="outline" className="whitespace-nowrap"><PlusCircle className="mr-2 h-4 w-4"/> Add Tax Rate</Button>
+                <Button variant="outline" className="whitespace-nowrap"><PlusCircleIcon className="mr-2 h-4 w-4"/> Add Tax Rate</Button>
               </div>
                <div className="flex items-center space-x-2">
                 <Switch id="taxInclusivePricing" />
@@ -103,7 +103,7 @@ export default function SettingsPage() {
         </TabsContent>
         
         <TabsContent value="payments">
-          <Card>
+          <Card className="shadow-lg">
             <CardHeader>
               <CardTitle>Payment Gateway Settings</CardTitle>
               <CardDescription>Configure your payment processing options.</CardDescription>
@@ -136,7 +136,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="printers">
-          <Card className="shadow-sm">
+          <Card className="shadow-lg">
             <CardHeader>
               <CardTitle>Printer Configuration</CardTitle>
               <CardDescription>Set up receipt and kitchen printers.</CardDescription>
@@ -162,13 +162,13 @@ export default function SettingsPage() {
                 </div>
                 <Button variant="outline">Configure</Button>
               </div>
-              <Button variant="default" className="mt-2"><PlusCircle className="mr-2 h-4 w-4"/> Add New Printer</Button>
+              <Button variant="default" className="mt-2"><PlusCircleIcon className="mr-2 h-4 w-4"/> Add New Printer</Button>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="users">
-           <Card className="shadow-sm">
+           <Card className="shadow-lg">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>User Management</CardTitle>
@@ -186,6 +186,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-// Using a local PlusCircle to avoid import issues if not globally available or if specific styling is needed
-const PlusCircle = ({className}: {className?: string}) => <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={cn("h-5 w-5",className)}><path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 9a.75.75 0 0 0-1.5 0v2.25H9a.75.75 0 0 0 0 1.5h2.25V15a.75.75 0 0 0 1.5 0v-2.25H15a.75.75 0 0 0 0-1.5h-2.25V9Z" clipRule="evenodd" /></svg>;
