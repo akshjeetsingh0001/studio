@@ -11,12 +11,12 @@ interface AppLogoProps {
 const AppLogo: React.FC<AppLogoProps> = ({ className, iconSize = 24, textSize = "text-2xl" }) => {
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      <ChefHat 
-        size={iconSize} 
-        className="text-rgb-animate animate-logo-icon-pulse" 
+      <ChefHat
+        size={iconSize}
+        className="animated-logo-icon" // Use new combined class for icon
       />
-      <h1 className={`font-bold ${textSize}`}>
-        <span className="text-rgb-animate animate-text-drop-in">Seera</span>
+      <h1 className={`font-bold ${textSize} animated-seera-text`}> {/* Use new combined class for text */}
+        Seera
       </h1>
     </div>
   );

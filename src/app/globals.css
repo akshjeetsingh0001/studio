@@ -52,11 +52,11 @@ body {
     --sidebar-ring: 170 55% 48%;
 
     /* Chart Colors - Light Mode */
-    --chart-1: 225 65% 55%; /* New Primary */
-    --chart-2: 170 55% 42%; /* New Accent */
-    --chart-3: 35 70% 60%;  /* Softer Orange */
-    --chart-4: 260 60% 65%; /* Softer Purple */
-    --chart-5: 0 65% 60%;   /* Consistent Red */
+    --chart-1: 225 65% 55%; 
+    --chart-2: 170 55% 42%; 
+    --chart-3: 35 70% 60%;  
+    --chart-4: 260 60% 65%; 
+    --chart-5: 0 65% 60%;   
   }
 
   .dark {
@@ -101,11 +101,11 @@ body {
     --sidebar-ring: 170 65% 60%;
     
     /* Chart Colors - Dark Mode */
-    --chart-1: 220 75% 68%; /* New Dark Primary */
-    --chart-2: 170 65% 55%; /* New Dark Accent */
-    --chart-3: 40 80% 65%;  /* Vibrant Orange */
-    --chart-4: 265 65% 70%; /* Vibrant Purple */
-    --chart-5: 0 70% 65%;   /* Consistent Red */
+    --chart-1: 220 75% 68%; 
+    --chart-2: 170 65% 55%; 
+    --chart-3: 40 80% 65%;  
+    --chart-4: 265 65% 70%; 
+    --chart-5: 0 70% 65%;   
   }
 }
 
@@ -129,10 +129,6 @@ body {
   100% { color: hsl(360, 100%, 50%); } /* Red (to complete the cycle) */
 }
 
-.text-rgb-animate {
-  animation: rgb-cycle 8s linear infinite;
-}
-
 @keyframes logoIconPulse {
   0%, 100% {
     transform: scale(1);
@@ -140,10 +136,6 @@ body {
   50% {
     transform: scale(1.08);
   }
-}
-
-.animate-logo-icon-pulse {
-  animation: logoIconPulse 2.5s ease-in-out infinite;
 }
 
 @keyframes text-drop-in {
@@ -157,7 +149,33 @@ body {
   }
 }
 
+/* Original individual animation classes - can be removed if AppLogo was only consumer */
+/*
+.text-rgb-animate {
+  animation: rgb-cycle 8s linear infinite;
+}
+
+.animate-logo-icon-pulse {
+  animation: logoIconPulse 2.5s ease-in-out infinite;
+}
+
 .animate-text-drop-in {
   animation: text-drop-in 0.7s ease-out forwards;
-  opacity: 0; /* Start as invisible, animation will make it visible */
+  opacity: 0; 
+}
+*/
+
+/* NEW Combined animation classes */
+.animated-logo-icon {
+  /* text-rgb-animate and animate-logo-icon-pulse combined */
+  animation: 
+    rgb-cycle 8s linear infinite,
+    logoIconPulse 2.5s ease-in-out infinite;
+}
+
+.animated-seera-text {
+  opacity: 0; /* Initial state for the drop-in animation */
+  animation:
+    text-drop-in 0.7s ease-out forwards, /* This will run once and hold */
+    rgb-cycle 8s linear infinite;        /* RGB cycle starts immediately */
 }
