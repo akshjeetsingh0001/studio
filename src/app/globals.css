@@ -58,10 +58,10 @@ body {
     --chart-4: 260 60% 65%;
     --chart-5: 0 65% 60%;
 
-    /* Animated Background Gradient Colors - Light Mode */
-    --animated-bg-light-1: 220 60% 98%; /* Very light, soft blue */
-    --animated-bg-light-2: 30 80% 97%;  /* Very light, soft peach */
-    --animated-bg-light-3: 180 50% 98%; /* Very light, soft aqua */
+    /* Animated Background Gradient Colors - Light Mode (RGB-like Pastels) */
+    --animated-bg-light-1: 0 70% 90%;   /* Light Pink/Red */
+    --animated-bg-light-2: 120 60% 90%; /* Light Mint/Green */
+    --animated-bg-light-3: 210 70% 90%; /* Light Sky Blue */
   }
 
   .dark {
@@ -112,10 +112,10 @@ body {
     --chart-4: 265 65% 70%;
     --chart-5: 0 70% 65%;
 
-    /* Animated Background Gradient Colors - Dark Mode */
-    --animated-bg-dark-1: 220 25% 10%; /* Deep, dark blue */
-    --animated-bg-dark-2: 260 30% 12%; /* Deep, dark purple */
-    --animated-bg-dark-3: 200 20% 9%;  /* Very dark, slightly desaturated teal */
+    /* Animated Background Gradient Colors - Dark Mode (Deep RGB) */
+    --animated-bg-dark-1: 0 50% 25%;   /* Deep Ruby Red */
+    --animated-bg-dark-2: 120 40% 20%; /* Deep Emerald Green */
+    --animated-bg-dark-3: 220 50% 25%; /* Deep Sapphire Blue */
   }
 }
 
@@ -209,4 +209,3 @@ body {
   animation-fill-mode: forwards; /* Retain the final state of the animation */
   animation-timing-function: ease-out;
 }
-
