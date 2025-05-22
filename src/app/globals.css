@@ -58,10 +58,10 @@ body {
     --chart-4: 260 60% 65%;
     --chart-5: 0 65% 60%;
 
-    /* Animated Background Gradient Colors - Light Mode (RGB-like Pastels) */
-    --animated-bg-light-1: 0 70% 90%;   /* Light Pink/Red */
-    --animated-bg-light-2: 120 60% 90%; /* Light Mint/Green */
-    --animated-bg-light-3: 210 70% 90%; /* Light Sky Blue */
+    /* Animated Background Gradient Colors - Light Mode (Luxury) */
+    --animated-bg-light-1: 40 50% 96%;   /* Very light, creamy beige */
+    --animated-bg-light-2: 210 40% 97%; /* Very light, cool silver-blue */
+    --animated-bg-light-3: 0 0% 98%;   /* Almost white, very subtle shimmer */
 
     /* New Order Button Gradient - Light Mode */
     --button-new-order-start: 225 65% 55%; /* Primary Blue */
@@ -105,7 +105,7 @@ body {
     --sidebar-primary: 170 65% 60%; 
     --sidebar-primary-foreground: 220 10% 10%;
     --sidebar-accent: 220 15% 22%; 
-    --sidebar-accent-foreground: 220 15% 95%;
+    --sidebar-accent-foreground: 220 15% 95%; /* Brighter light grey for hover text */
     --sidebar-border: transparent; 
     --sidebar-ring: 170 65% 60%;
 
@@ -116,10 +116,10 @@ body {
     --chart-4: 265 65% 70%;
     --chart-5: 0 70% 65%;
 
-    /* Animated Background Gradient Colors - Dark Mode (Deep RGB) */
-    --animated-bg-dark-1: 0 50% 25%;   /* Deep Ruby Red */
-    --animated-bg-dark-2: 120 40% 20%; /* Deep Emerald Green */
-    --animated-bg-dark-3: 220 50% 25%; /* Deep Sapphire Blue */
+    /* Animated Background Gradient Colors - Dark Mode (Luxury) */
+    --animated-bg-dark-1: 220 30% 10%;   /* Very deep, slightly desaturated navy/charcoal */
+    --animated-bg-dark-2: 260 25% 12%; /* Deep, muted purple/indigo */
+    --animated-bg-dark-3: 180 20% 9%;   /* Very dark teal/charcoal */
 
     /* New Order Button Gradient - Dark Mode */
     --button-new-order-start: 220 75% 68%; /* Primary Blue */
@@ -225,3 +225,4 @@ body {
 .font-seera-brand {
   font-family: var(--font-playfair-display), Georgia, serif;
 }
+
