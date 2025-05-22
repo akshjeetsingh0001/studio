@@ -55,7 +55,10 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
 
   return (
     <Sidebar
-      className={cn("border-r bg-sidebar text-sidebar-foreground", className)}
+      className={cn(
+        "border-r border-sidebar-border text-sidebar-foreground bg-background/70 backdrop-blur-lg", 
+        className
+      )}
       collapsible="icon"
       variant="sidebar"
     >
@@ -82,7 +85,7 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
                           asChild
                           isActive={isActive}
                           className={cn(
-                            "w-full justify-start",
+                            "w-full justify-start transform transition-transform duration-150 ease-in-out hover:-translate-y-0.5",
                             isActive
                               ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 hover:text-sidebar-primary-foreground"
                               : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
