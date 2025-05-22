@@ -26,15 +26,23 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"; 
 
+interface MenuItemVariant {
+  size?: string; // For pizzas: 'Small', 'Medium', 'Large'
+  type?: string; // For pasta: 'Red', 'White', 'Combi'
+  price: number;
+  idSuffix: string; // e.g., '_S', '_M', '_L', '_RED'
+}
+
 interface MenuItem {
   id: string;
   name: string;
   category: string;
-  price: number;
+  price: number; // Base price or price of default/smallest variant
   availability: boolean;
   imageUrl: string;
-  description: string;
+  description?: string;
   'data-ai-hint'?: string;
+  variants?: MenuItemVariant[];
 }
 
 interface Category {
@@ -53,33 +61,90 @@ const USER_MENU_ITEMS_KEY = 'dineSwiftMenuItems';
 
 const initialMockMenuItems: MenuItem[] = [
   // Pizzas - CLASSIC
-  { id: 'PIZZA_CLASSIC_MARG_S', name: 'Margherita (Small)', category: 'PIZZAS - CLASSIC', price: 100, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=MS', description: 'Classic Margherita Pizza - Small size.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_CLASSIC_MARG_M', name: 'Margherita (Medium)', category: 'PIZZAS - CLASSIC', price: 200, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=MM', description: 'Classic Margherita Pizza - Medium size.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_CLASSIC_MARG_L', name: 'Margherita (Large)', category: 'PIZZAS - CLASSIC', price: 300, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=ML', description: 'Classic Margherita Pizza - Large size.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_CLASSIC_CT', name: 'Cheese Tomato Pizza', category: 'PIZZAS - CLASSIC', price: 0, availability: false, imageUrl: 'https://placehold.co/100x100.png?text=CT', description: 'Cheese Tomato Pizza.', 'data-ai-hint': 'pizza food' },
+  {
+    id: 'PIZZA_CLASSIC_MARG', name: 'Margherita', category: 'PIZZAS - CLASSIC', price: 100, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=M', description: 'Classic Margherita Pizza.', 'data-ai-hint': 'pizza food',
+    variants: [
+      { size: 'Small', price: 100, idSuffix: '_S' }, { size: 'Medium', price: 200, idSuffix: '_M' }, { size: 'Large', price: 300, idSuffix: '_L' },
+    ]
+  },
+  {
+    id: 'PIZZA_CLASSIC_CT', name: 'Cheese Tomato Pizza', category: 'PIZZAS - CLASSIC', price: 100, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=CTP', description: 'Cheese Tomato Pizza.', 'data-ai-hint': 'pizza food',
+    variants: [
+      { size: 'Small', price: 100, idSuffix: '_S' }, { size: 'Medium', price: 200, idSuffix: '_M' }, { size: 'Large', price: 300, idSuffix: '_L' },
+    ]
+  },
 
   // Pizzas - SIMPLE
-  { id: 'PIZZA_SIMPLE_DCM_S', name: 'Double Cheese Margherita (Small)', category: 'PIZZAS - SIMPLE', price: 150, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=DCS', description: 'Double Cheese Margherita - Small.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_SIMPLE_DCM_M', name: 'Double Cheese Margherita (Medium)', category: 'PIZZAS - SIMPLE', price: 290, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=DCM', description: 'Double Cheese Margherita - Medium.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_SIMPLE_DCM_L', name: 'Double Cheese Margherita (Large)', category: 'PIZZAS - SIMPLE', price: 450, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=DCL', description: 'Double Cheese Margherita - Large.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_SIMPLE_SV', name: 'Simple Veg Pizza', category: 'PIZZAS - SIMPLE', price: 0, availability: false, imageUrl: 'https://placehold.co/100x100.png?text=SV', description: 'Simple Veg Pizza.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_SIMPLE_JC', name: 'Just Corn Pizza', category: 'PIZZAS - SIMPLE', price: 0, availability: false, imageUrl: 'https://placehold.co/100x100.png?text=JC', description: 'Just Corn Pizza.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_SIMPLE_FL', name: 'Farm Lover Pizza', category: 'PIZZAS - SIMPLE', price: 0, availability: false, imageUrl: 'https://placehold.co/100x100.png?text=FL', description: 'Farm Lover Pizza.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_SIMPLE_SP', name: 'Spicy Paneer Pizza', category: 'PIZZAS - SIMPLE', price: 0, availability: false, imageUrl: 'https://placehold.co/100x100.png?text=SPP', description: 'Spicy Paneer Pizza.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_SIMPLE_TM', name: 'Tasty Mexicana Pizza', category: 'PIZZAS - SIMPLE', price: 0, availability: false, imageUrl: 'https://placehold.co/100x100.png?text=TMP', description: 'Tasty Mexicana Pizza.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_SIMPLE_BW', name: 'Black & White Pizza', category: 'PIZZAS - SIMPLE', price: 0, availability: false, imageUrl: 'https://placehold.co/100x100.png?text=BWP', description: 'Black & White Pizza.', 'data-ai-hint': 'pizza food' },
+  {
+    id: 'PIZZA_SIMPLE_DCM', name: 'Double Cheese Margherita', category: 'PIZZAS - SIMPLE', price: 150, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=DCM', description: 'Double Cheese Margherita.', 'data-ai-hint': 'pizza food',
+    variants: [
+      { size: 'Small', price: 150, idSuffix: '_S' }, { size: 'Medium', price: 290, idSuffix: '_M' }, { size: 'Large', price: 450, idSuffix: '_L' },
+    ]
+  },
+  {
+    id: 'PIZZA_SIMPLE_SV', name: 'Simple Veg Pizza', category: 'PIZZAS - SIMPLE', price: 150, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=SV', description: 'Simple Veg Pizza.', 'data-ai-hint': 'pizza food',
+    variants: [
+      { size: 'Small', price: 150, idSuffix: '_S' }, { size: 'Medium', price: 290, idSuffix: '_M' }, { size: 'Large', price: 450, idSuffix: '_L' },
+    ]
+  },
+  {
+    id: 'PIZZA_SIMPLE_JC', name: 'Just Corn Pizza', category: 'PIZZAS - SIMPLE', price: 150, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=JC', description: 'Just Corn Pizza.', 'data-ai-hint': 'pizza food',
+    variants: [
+      { size: 'Small', price: 150, idSuffix: '_S' }, { size: 'Medium', price: 290, idSuffix: '_M' }, { size: 'Large', price: 450, idSuffix: '_L' },
+    ]
+  },
+  {
+    id: 'PIZZA_SIMPLE_FL', name: 'Farm Lover Pizza', category: 'PIZZAS - SIMPLE', price: 150, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=FL', description: 'Farm Lover Pizza.', 'data-ai-hint': 'pizza food',
+    variants: [
+      { size: 'Small', price: 150, idSuffix: '_S' }, { size: 'Medium', price: 290, idSuffix: '_M' }, { size: 'Large', price: 450, idSuffix: '_L' },
+    ]
+  },
+  {
+    id: 'PIZZA_SIMPLE_SP', name: 'Spicy Paneer Pizza', category: 'PIZZAS - SIMPLE', price: 150, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=SPP', description: 'Spicy Paneer Pizza.', 'data-ai-hint': 'pizza food',
+    variants: [
+      { size: 'Small', price: 150, idSuffix: '_S' }, { size: 'Medium', price: 290, idSuffix: '_M' }, { size: 'Large', price: 450, idSuffix: '_L' },
+    ]
+  },
+  {
+    id: 'PIZZA_SIMPLE_TM', name: 'Tasty Mexicana Pizza', category: 'PIZZAS - SIMPLE', price: 150, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=TMP', description: 'Tasty Mexicana Pizza.', 'data-ai-hint': 'pizza food',
+    variants: [
+      { size: 'Small', price: 150, idSuffix: '_S' }, { size: 'Medium', price: 290, idSuffix: '_M' }, { size: 'Large', price: 450, idSuffix: '_L' },
+    ]
+  },
+  {
+    id: 'PIZZA_SIMPLE_BW', name: 'Black & White Pizza', category: 'PIZZAS - SIMPLE', price: 150, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=BWP', description: 'Black & White Pizza.', 'data-ai-hint': 'pizza food',
+    variants: [
+      { size: 'Small', price: 150, idSuffix: '_S' }, { size: 'Medium', price: 290, idSuffix: '_M' }, { size: 'Large', price: 450, idSuffix: '_L' },
+    ]
+  },
 
   // Pizzas - PREMIUM
-  { id: 'PIZZA_PREMIUM_PH_S', name: 'Paneer Hub (Small)', category: 'PIZZAS - PREMIUM', price: 200, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=PHS', description: 'Paneer Hub Pizza - Small.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_PREMIUM_PH_M', name: 'Paneer Hub (Medium)', category: 'PIZZAS - PREMIUM', price: 370, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=PHM', description: 'Paneer Hub Pizza - Medium.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_PREMIUM_PH_L', name: 'Paneer Hub (Large)', category: 'PIZZAS - PREMIUM', price: 550, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=PHL', description: 'Paneer Hub Pizza - Large.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_PREMIUM_OLIVY', name: 'Olivy Pizza', category: 'PIZZAS - PREMIUM', price: 0, availability: false, imageUrl: 'https://placehold.co/100x100.png?text=OP', description: 'Olivy Pizza.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_PREMIUM_PMIX', name: 'Premium Mix Pizza', category: 'PIZZAS - PREMIUM', price: 0, availability: false, imageUrl: 'https://placehold.co/100x100.png?text=PMP', description: 'Premium Mix Pizza.', 'data-ai-hint': 'pizza food' },
+  {
+    id: 'PIZZA_PREMIUM_PH', name: 'Paneer Hub', category: 'PIZZAS - PREMIUM', price: 200, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=PH', description: 'Paneer Hub Pizza.', 'data-ai-hint': 'pizza food',
+    variants: [
+      { size: 'Small', price: 200, idSuffix: '_S' }, { size: 'Medium', price: 370, idSuffix: '_M' }, { size: 'Large', price: 550, idSuffix: '_L' },
+    ]
+  },
+  {
+    id: 'PIZZA_PREMIUM_OLIVY', name: 'Olivy Pizza', category: 'PIZZAS - PREMIUM', price: 200, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=OP', description: 'Olivy Pizza.', 'data-ai-hint': 'pizza food',
+    variants: [
+      { size: 'Small', price: 200, idSuffix: '_S' }, { size: 'Medium', price: 370, idSuffix: '_M' }, { size: 'Large', price: 550, idSuffix: '_L' },
+    ]
+  },
+  {
+    id: 'PIZZA_PREMIUM_PMIX', name: 'Premium Mix Pizza', category: 'PIZZAS - PREMIUM', price: 200, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=PMP', description: 'Premium Mix Pizza.', 'data-ai-hint': 'pizza food',
+    variants: [
+      { size: 'Small', price: 200, idSuffix: '_S' }, { size: 'Medium', price: 370, idSuffix: '_M' }, { size: 'Large', price: 550, idSuffix: '_L' },
+    ]
+  },
 
   // Pizzas - Delight Hub SPECIAL
-  { id: 'PIZZA_SPECIAL_DHS_S', name: 'Delight Hub Special (Small)', category: 'PIZZAS - SPECIAL', price: 230, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=DHS', description: 'Delight Hub Special Pizza - Small.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_SPECIAL_DHS_M', name: 'Delight Hub Special (Medium)', category: 'PIZZAS - SPECIAL', price: 460, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=DHM', description: 'Delight Hub Special Pizza - Medium.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_SPECIAL_DHS_L', name: 'Delight Hub Special (Large)', category: 'PIZZAS - SPECIAL', price: 650, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=DHL', description: 'Delight Hub Special Pizza - Large.', 'data-ai-hint': 'pizza food' },
+  {
+    id: 'PIZZA_SPECIAL_DHS', name: 'Delight Hub Special', category: 'PIZZAS - SPECIAL', price: 230, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=DHS', description: 'Delight Hub Special Pizza.', 'data-ai-hint': 'pizza food',
+    variants: [
+      { size: 'Small', price: 230, idSuffix: '_S' }, { size: 'Medium', price: 460, idSuffix: '_M' }, { size: 'Large', price: 650, idSuffix: '_L' },
+    ]
+  },
   
   // EXTRAS
   { id: 'EXTRA_CHEESE', name: 'Cheese-Topping', category: 'EXTRAS', price: 40, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=CT', description: 'Extra cheese topping.', 'data-ai-hint': 'cheese topping' },
@@ -107,12 +172,18 @@ const initialMockMenuItems: MenuItem[] = [
   { id: 'SAND_PANEERTIKKA', name: 'Paneer Tikka Sandwich', category: 'SANDWICHES', price: 100, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=PTS', description: 'Spicy paneer tikka sandwich.', 'data-ai-hint': 'sandwich food' },
 
   // PASTA
-  { id: 'PASTA_REG_R', name: 'Regular Pasta (Red)', category: 'PASTA', price: 80, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=RPR', description: 'Regular pasta in red sauce.', 'data-ai-hint': 'pasta food' },
-  { id: 'PASTA_REG_W', name: 'Regular Pasta (White)', category: 'PASTA', price: 80, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=RPW', description: 'Regular pasta in white sauce.', 'data-ai-hint': 'pasta food' },
-  { id: 'PASTA_REG_C', name: 'Regular Pasta (Combi)', category: 'PASTA', price: 100, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=RPC', description: 'Regular pasta in combination sauce.', 'data-ai-hint': 'pasta food' },
-  { id: 'PASTA_TANDOORI_R', name: 'Tandoori Pasta (Red)', category: 'PASTA', price: 80, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=TPR', description: 'Tandoori pasta in red sauce.', 'data-ai-hint': 'pasta food' },
-  { id: 'PASTA_TANDOORI_W', name: 'Tandoori Pasta (White)', category: 'PASTA', price: 80, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=TPW', description: 'Tandoori pasta in white sauce.', 'data-ai-hint': 'pasta food' },
-  { id: 'PASTA_TANDOORI_C', name: 'Tandoori Pasta (Combi)', category: 'PASTA', price: 100, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=TPC', description: 'Tandoori pasta in combination sauce.', 'data-ai-hint': 'pasta food' },
+  { 
+    id: 'PASTA_REGULAR', name: 'Regular Pasta', category: 'PASTA', price: 80, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=RP', description: 'Regular pasta.', 'data-ai-hint': 'pasta food',
+    variants: [
+      { type: 'Red Sauce', price: 80, idSuffix: '_RED' }, { type: 'White Sauce', price: 80, idSuffix: '_WHITE' }, { type: 'Combi Sauce', price: 100, idSuffix: '_COMBI' },
+    ]
+  },
+  { 
+    id: 'PASTA_TANDOORI', name: 'Tandoori Pasta', category: 'PASTA', price: 80, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=TP', description: 'Tandoori pasta.', 'data-ai-hint': 'pasta food',
+    variants: [
+      { type: 'Red Sauce', price: 80, idSuffix: '_RED' }, { type: 'White Sauce', price: 80, idSuffix: '_WHITE' }, { type: 'Combi Sauce', price: 100, idSuffix: '_COMBI' },
+    ]
+  },
 
   // FRIES
   { id: 'FRIES_PERI', name: 'Peri Peri Fries', category: 'FRIES', price: 70, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=PPF', description: 'Spicy Peri Peri fries.', 'data-ai-hint': 'fries food' },
@@ -128,8 +199,12 @@ const initialMockMenuItems: MenuItem[] = [
   { id: 'BURGER_DOUBLEDECKER', name: 'Double Decker Burger', category: 'BURGERS', price: 100, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=DDB', description: 'A double decker burger.', 'data-ai-hint': 'burger food' },
 
   // KUHLAD SPECIALS
-  { id: 'KUHLAD_PIZZA_R', name: 'Kuhlad Pizza (Regular)', category: 'KUHLAD SPECIALS', price: 100, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=KP', description: 'Pizza served in a kuhlad - regular size.', 'data-ai-hint': 'pizza food' },
-  { id: 'KUHLAD_PIZZA_L', name: 'Kuhlad Pizza (Large)', category: 'KUHLAD SPECIALS', price: 140, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=KPL', description: 'Pizza served in a kuhlad - large size.', 'data-ai-hint': 'pizza food' },
+  { 
+    id: 'KUHLAD_PIZZA', name: 'Kuhlad Pizza', category: 'KUHLAD SPECIALS', price: 100, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=KP', description: 'Pizza served in a kuhlad.', 'data-ai-hint': 'pizza food',
+    variants: [
+        { size: 'Regular', price: 100, idSuffix: '_REG' }, { size: 'Large', price: 140, idSuffix: '_LRG' }
+    ]
+  },
   { id: 'KUHLAD_CHEESEFRIES', name: 'Kuhlad Cheese Fries', category: 'KUHLAD SPECIALS', price: 120, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=KCF', description: 'Cheese fries served in a kuhlad.', 'data-ai-hint': 'fries food' },
   { id: 'KUHLAD_PASTA', name: 'Kuhlad Pasta', category: 'KUHLAD SPECIALS', price: 120, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=KPS', description: 'Pasta served in a kuhlad.', 'data-ai-hint': 'pasta food' },
 
@@ -172,7 +247,7 @@ export default function MenuManagementPage() {
         const savedItemsRaw = localStorage.getItem(USER_MENU_ITEMS_KEY);
         if (savedItemsRaw) {
           const parsedItems = JSON.parse(savedItemsRaw);
-          if (Array.isArray(parsedItems) && parsedItems.length > 0) {
+           if (Array.isArray(parsedItems) && parsedItems.length > 0 && parsedItems.every(item => typeof item.id === 'string' && typeof item.name === 'string')) {
             setMenuItems(parsedItems); 
           } else {
             setMenuItems(initialMockMenuItems);
@@ -287,6 +362,19 @@ export default function MenuManagementPage() {
     item.category.toLowerCase().includes(searchTerm.toLowerCase())
   ).sort((a,b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name)); 
 
+  const getPriceDisplay = (item: MenuItem): string => {
+    if (item.variants && item.variants.length > 0) {
+      const prices = item.variants.map(v => v.price);
+      const minPrice = Math.min(...prices);
+      const maxPrice = Math.max(...prices);
+      if (minPrice === maxPrice) {
+        return `₹${minPrice.toFixed(2)}`;
+      }
+      return `₹${minPrice.toFixed(2)} - ₹${maxPrice.toFixed(2)}`;
+    }
+    return `₹${item.price.toFixed(2)}`;
+  };
+
 
   return (
     <>
@@ -322,7 +410,7 @@ export default function MenuManagementPage() {
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle>Menu Items</CardTitle>
-              <CardDescription>Manage all individual items on your menu.</CardDescription>
+              <CardDescription>Manage all individual items on your menu. Note: Adding items with variants (e.g., Pizza sizes) is not yet supported via the 'Add New Item' form.</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -351,7 +439,7 @@ export default function MenuManagementPage() {
                       </TableCell>
                       <TableCell className="font-medium">{item.name}</TableCell>
                       <TableCell>{item.category}</TableCell>
-                      <TableCell className="text-right">${item.price.toFixed(2)}</TableCell>
+                      <TableCell className="text-right">{getPriceDisplay(item)}</TableCell>
                       <TableCell className="text-center">
                         <Switch
                           checked={item.availability}

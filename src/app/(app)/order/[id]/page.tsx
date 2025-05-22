@@ -2,8 +2,7 @@
 'use client';
 
 import type React from 'react';
-import { useState, useEffect, useCallback }
-from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -15,23 +14,31 @@ import { PlusCircle, MinusCircle, Trash2, ShoppingCart, Zap, Lightbulb, DollarSi
 import { getUpsellSuggestions, type GetUpsellSuggestionsInput } from '@/ai/flows/upsell-suggestions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 
-
-const initialMockMenuItemsForOrderPage: MenuItem[] = [];
+interface MenuItemVariant {
+  size?: string; // For pizzas: 'Small', 'Medium', 'Large'
+  type?: string; // For pasta: 'Red Sauce', 'White Sauce', 'Combi Sauce'
+  price: number;
+  idSuffix: string; // e.g., '_S', '_M', '_L', '_RED'
+}
 
 interface MenuItem {
   id: string;
   name: string;
   category: string;
-  price: number;
+  price: number; // Base price or price of default/smallest variant
   imageUrl: string;
-  description: string;
+  description?: string;
   availability: boolean;
   'data-ai-hint'?: string;
+  variants?: MenuItemVariant[];
 }
 
 export interface OrderItem extends MenuItem {
   quantity: number;
+  // Potentially add selectedVariant information if needed for complex logic later
+  // selectedVariant?: MenuItemVariant; 
 }
 
 const USER_MENU_ITEMS_KEY = 'dineSwiftMenuItems';
@@ -49,6 +56,9 @@ export default function OrderEntryPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
+
+  const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
+  const [selectedItemForVariant, setSelectedItemForVariant] = useState<MenuItem | null>(null);
 
   const pageTitle = pageParamId === 'new' ? 'New Order' : `Order for ${pageParamId?.toUpperCase()}`;
   const pageDescription = pageParamId === 'new' ? '' : `Manage order for Table/ID: ${pageParamId?.toUpperCase()}`;
@@ -68,12 +78,12 @@ export default function OrderEntryPage() {
               imageUrl: item.imageUrl || 'https://placehold.co/150x100.png',
               description: item.description || '',
               availability: typeof item.availability === 'boolean' ? item.availability : true,
-              'data-ai-hint': item['data-ai-hint'] || `${(item.category || '').toLowerCase()} food`
+              'data-ai-hint': item['data-ai-hint'] || `${(item.category || '').toLowerCase()} food`,
+              variants: item.variants || undefined,
             })));
             return;
           }
         }
-         
         setMenuItems([]);
       } catch (e) {
         console.error("Failed to load menu items from localStorage for order page", e);
@@ -88,17 +98,57 @@ export default function OrderEntryPage() {
     loadMenuItemsFromStorage();
   }, [loadMenuItemsFromStorage]);
 
-  const addItemToOrder = (item: MenuItem) => {
-    setCurrentOrder((prevOrder) => {
-      const existingItem = prevOrder.find((orderItem) => orderItem.id === item.id);
+  const handleItemClick = (item: MenuItem) => {
+    if (!item.availability) {
+      toast({
+        title: "Item Unavailable",
+        description: `${item.name} is currently not available.`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (item.variants && item.variants.length > 0) {
+      setSelectedItemForVariant(item);
+      setIsVariantDialogOpen(true);
+    } else {
+      addItemToOrder(item);
+    }
+  };
+
+  const handleVariantSelected = (baseItem: MenuItem, variant: MenuItemVariant) => {
+    const orderItem: OrderItem = {
+      ...baseItem,
+      id: `${baseItem.id}${variant.idSuffix}`, // Unique ID for the variant
+      name: `${baseItem.name} (${variant.size || variant.type})`,
+      price: variant.price,
+      quantity: 1,
+      variants: undefined, // Clear variants for the order item itself, as it's now specific
+      // selectedVariant: variant, // Optionally store which variant was chosen
+    };
+    addItemToOrder(orderItem, true); // Pass true if it's a variant selection
+    setIsVariantDialogOpen(false);
+    setSelectedItemForVariant(null);
+  };
+
+  const addItemToOrder = (itemToAdd: OrderItem | MenuItem, isVariant: boolean = false) => {
+     setCurrentOrder((prevOrder) => {
+      // If it's a variant, its ID is already unique (e.g., PIZZA_S).
+      // If it's a base item (not a variant from dialog), its ID is the base ID.
+      const existingItem = prevOrder.find((orderItem) => orderItem.id === itemToAdd.id);
+      
       if (existingItem) {
         return prevOrder.map((orderItem) =>
-          orderItem.id === item.id ? { ...orderItem, quantity: orderItem.quantity + 1 } : orderItem
+          orderItem.id === itemToAdd.id ? { ...orderItem, quantity: orderItem.quantity + 1 } : orderItem
         );
       }
-      return [...prevOrder, { ...item, quantity: 1 }];
+      // If it's a new item (or a new variant not yet in order), add it with quantity 1
+      // Ensure all properties of OrderItem are present
+      const newItem = itemToAdd as OrderItem; // Type assertion
+      return [...prevOrder, { ...newItem, quantity: newItem.quantity || 1 }];
     });
   };
+
 
   const removeItemFromOrder = (itemId: string) => {
     setCurrentOrder((prevOrder) => {
@@ -208,6 +258,7 @@ export default function OrderEntryPage() {
         description: item.description,
         availability: item.availability, 
         'data-ai-hint': item['data-ai-hint'],
+        // Do not store variants array in orderDetails, it's already resolved
       })),
     };
 
@@ -323,7 +374,12 @@ export default function OrderEntryPage() {
         const savedOrders = JSON.parse(savedOrdersRaw);
         const orderToEdit = savedOrders.find((order: any) => order.id.toLowerCase() === pageParamId.toLowerCase() || order.table.toLowerCase() === pageParamId.toLowerCase());
         if (orderToEdit && orderToEdit.orderDetails) {
-          setCurrentOrder(orderToEdit.orderDetails);
+          // Ensure orderDetails conform to OrderItem structure, especially 'quantity'
+          const validatedOrderDetails = orderToEdit.orderDetails.map((detail: any) => ({
+            ...detail,
+            quantity: detail.quantity || 1, // Ensure quantity is at least 1
+          }));
+          setCurrentOrder(validatedOrderDetails);
         } else if (orderToEdit) {
            console.warn(`Order ${pageParamId} found but no detailed items. Starting fresh for this ID.`);
         }
@@ -340,9 +396,21 @@ export default function OrderEntryPage() {
     );
   }
 
+  const getDisplayPrice = (item: MenuItem) => {
+    if (item.variants && item.variants.length > 0) {
+      const prices = item.variants.map(v => v.price);
+      const minPrice = Math.min(...prices);
+      if (item.variants.length === 1) return `₹${minPrice.toFixed(2)}`;
+      const maxPrice = Math.max(...prices);
+      return `₹${minPrice.toFixed(2)} - ₹${maxPrice.toFixed(2)}`;
+    }
+    return `₹${item.price.toFixed(2)}`;
+  };
+
+
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]"> 
-      <PageHeader title={pageTitle} description={pageDescription}>
+      <PageHeader title={pageTitle} description={pageParamId === 'new' ? '' : pageDescription}>
          <Button variant="outline" size="sm" onClick={handleSaveOrder} disabled={currentOrder.length === 0}>
             <DollarSign className="mr-2 h-4 w-4" />
             Save Order
@@ -391,7 +459,7 @@ export default function OrderEntryPage() {
                         <Card
                           key={item.id}
                           className="flex flex-col overflow-hidden hover:shadow-md transition-shadow transition-transform duration-150 ease-in-out hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                          onClick={() => addItemToOrder(item)}
+                          onClick={() => handleItemClick(item)}
                         >
                           <div className="relative w-full h-32">
                             <Image 
@@ -405,7 +473,7 @@ export default function OrderEntryPage() {
                           <div className="p-2 flex flex-col flex-grow">
                             <div className="flex-grow mb-1">
                               <CardTitle className="text-base font-semibold mb-0.5">{item.name}</CardTitle>
-                              <p className="text-sm font-bold text-primary">${item.price.toFixed(2)}</p>
+                              <p className="text-sm font-bold text-primary">{getDisplayPrice(item)}</p>
                             </div>
                           </div>
                         </Card>
@@ -443,14 +511,15 @@ export default function OrderEntryPage() {
                       <li key={item.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-md">
                         <div>
                           <p className="font-medium">{item.name}</p>
-                          <p className="text-xs text-muted-foreground">${item.price.toFixed(2)} x {item.quantity}</p>
+                          <p className="text-xs text-muted-foreground">₹{item.price.toFixed(2)} x {item.quantity}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <Button variant="ghost" size="icon" onClick={() => removeItemFromOrder(item.id)} className="h-7 w-7">
                             <MinusCircle className="h-4 w-4" />
                           </Button>
                           <span className="w-4 text-center">{item.quantity}</span>
-                          <Button variant="ghost" size="icon" onClick={() => addItemToOrder(item)} className="h-7 w-7">
+                           {/* Re-enable adding more of an already selected variant/item */}
+                          <Button variant="ghost" size="icon" onClick={() => addItemToOrder(item, true)} className="h-7 w-7">
                             <PlusCircle className="h-4 w-4" />
                           </Button>
                            <Button variant="ghost" size="icon" onClick={() => completelyRemoveItem(item.id)} className="h-7 w-7 text-destructive hover:text-destructive/80">
@@ -469,7 +538,7 @@ export default function OrderEntryPage() {
                 <CardContent className="p-4">
                   <div className="flex justify-between items-center font-semibold text-lg">
                     <span>Total:</span>
-                    <span>${calculateTotal().toFixed(2)}</span>
+                    <span>₹{calculateTotal().toFixed(2)}</span>
                   </div>
                 </CardContent>
               </>
@@ -501,10 +570,15 @@ export default function OrderEntryPage() {
                         variant="outline" 
                         className="w-full justify-start text-left h-auto py-2 hover:border-accent hover:text-accent"
                         onClick={() => {
-                          const suggestedItem = menuItems.find(mi => mi.availability && suggestion.toLowerCase().includes(mi.name.toLowerCase()));
-                          if (suggestedItem) {
-                            addItemToOrder(suggestedItem);
-                            toast({ title: "Added to order!", description: `${suggestedItem.name} was added from AI suggestion.`});
+                          // Attempt to find a matching available base item for the suggestion.
+                          // This is a simplified match; real system might need fuzzy matching or more structured suggestions.
+                          const suggestedBaseItem = menuItems.find(mi => 
+                            mi.availability && suggestion.toLowerCase().includes(mi.name.toLowerCase())
+                          );
+                          
+                          if (suggestedBaseItem) {
+                            handleItemClick(suggestedBaseItem); // This will open variant dialog if needed
+                            toast({ title: "Suggestion added!", description: `Considered: ${suggestion}. Please select options if prompted.`});
                           } else {
                              toast({ title: "Suggestion", description: `Consider: ${suggestion}`});
                           }
@@ -521,6 +595,39 @@ export default function OrderEntryPage() {
           </Card>
         </div>
       </div>
+      {selectedItemForVariant && (
+        <Dialog open={isVariantDialogOpen} onOpenChange={(open) => {
+            if (!open) {
+                setIsVariantDialogOpen(false);
+                setSelectedItemForVariant(null);
+            }
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Select size for {selectedItemForVariant.name}</DialogTitle>
+              <DialogDescription>
+                Choose one of the available options below.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-3 py-4">
+              {selectedItemForVariant.variants?.map((variant) => (
+                <Button
+                  key={variant.idSuffix}
+                  variant="outline"
+                  className="w-full justify-between h-auto py-3"
+                  onClick={() => handleVariantSelected(selectedItemForVariant, variant)}
+                >
+                  <span>{variant.size || variant.type}</span>
+                  <span className="font-semibold">₹{variant.price.toFixed(2)}</span>
+                </Button>
+              ))}
+            </div>
+            <DialogFooter>
+                <Button variant="ghost" onClick={() => { setIsVariantDialogOpen(false); setSelectedItemForVariant(null); }}>Cancel</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
