@@ -131,7 +131,18 @@ body {
 
 .text-rgb-animate {
   animation: rgb-cycle 8s linear infinite;
-  /* Fallback color in case animations are disabled or not supported */
-  /* This will use the default text color for the parent or page */
   color: inherit; 
+}
+
+@keyframes logoIconPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+.animate-logo-icon-pulse {
+  animation: logoIconPulse 2.5s ease-in-out infinite;
 }
