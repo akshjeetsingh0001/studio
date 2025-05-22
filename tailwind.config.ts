@@ -85,7 +85,7 @@ export default {
   				}
   			},
         'fadeIn': {
-          'from': { opacity: '0', transform: 'translateY(10px)' },
+          'from': { opacity: '0', transform: 'translateY(20px)' }, /* Increased from 10px to 20px */
           'to': { opacity: '1', transform: 'translateY(0)' },
         },
   		},
