@@ -24,8 +24,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+} from "@/components/ui/alert-dialog"; // AlertDialogTrigger removed as it's not used directly here
 
 interface MenuItem {
   id: string;
@@ -129,7 +128,7 @@ const initialMockMenuItems: MenuItem[] = [
   { id: 'BURGER_DOUBLEDECKER', name: 'Double Decker Burger', category: 'BURGERS', price: 100, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=DDB', description: 'A double decker burger.', 'data-ai-hint': 'burger food' },
 
   // KUHLAD SPECIALS
-  { id: 'KUHLAD_PIZZA_S', name: 'Kuhlad Pizza (Regular)', category: 'KUHLAD SPECIALS', price: 100, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=KP', description: 'Pizza served in a kuhlad - regular size.', 'data-ai-hint': 'pizza food' },
+  { id: 'KUHLAD_PIZZA_R', name: 'Kuhlad Pizza (Regular)', category: 'KUHLAD SPECIALS', price: 100, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=KP', description: 'Pizza served in a kuhlad - regular size.', 'data-ai-hint': 'pizza food' },
   { id: 'KUHLAD_PIZZA_L', name: 'Kuhlad Pizza (Large)', category: 'KUHLAD SPECIALS', price: 140, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=KPL', description: 'Pizza served in a kuhlad - large size.', 'data-ai-hint': 'pizza food' },
   { id: 'KUHLAD_CHEESEFRIES', name: 'Kuhlad Cheese Fries', category: 'KUHLAD SPECIALS', price: 120, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=KCF', description: 'Cheese fries served in a kuhlad.', 'data-ai-hint': 'fries food' },
   { id: 'KUHLAD_PASTA', name: 'Kuhlad Pasta', category: 'KUHLAD SPECIALS', price: 120, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=KPS', description: 'Pasta served in a kuhlad.', 'data-ai-hint': 'pasta food' },
@@ -173,20 +172,25 @@ export default function MenuManagementPage() {
         const savedItemsRaw = localStorage.getItem(USER_MENU_ITEMS_KEY);
         if (savedItemsRaw) {
           const parsedItems = JSON.parse(savedItemsRaw);
-          setMenuItems(Array.isArray(parsedItems) ? parsedItems : initialMockMenuItems);
-           if (!Array.isArray(parsedItems) || parsedItems.length === 0) {
-             updateLocalStorage(initialMockMenuItems); 
+          if (Array.isArray(parsedItems) && parsedItems.length > 0) {
+            setMenuItems(parsedItems); // Use items from localStorage if they are valid and non-empty
+          } else {
+            // localStorage was empty or invalid array
+            setMenuItems(initialMockMenuItems);
+            updateLocalStorage(initialMockMenuItems); // Save the defaults
           }
         } else {
+          // No items in localStorage
           setMenuItems(initialMockMenuItems);
-          updateLocalStorage(initialMockMenuItems); 
+          updateLocalStorage(initialMockMenuItems); // Save the defaults
         }
       } catch (e) {
         console.error("Failed to load menu items from localStorage", e);
-        setMenuItems(initialMockMenuItems); 
+        setMenuItems(initialMockMenuItems); // Fallback on error
+        updateLocalStorage(initialMockMenuItems); // Attempt to save defaults on error
       }
     } else {
-        setMenuItems(initialMockMenuItems); 
+        setMenuItems(initialMockMenuItems); // Fallback for non-browser environments
     }
   }, []);
 
@@ -495,3 +499,5 @@ export default function MenuManagementPage() {
     </>
   );
 }
+
+    
