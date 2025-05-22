@@ -18,7 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 
 interface MenuItemVariant {
   size?: string;
-  type?: string; 
+  type?: string;
   price: number;
   idSuffix: string;
 }
@@ -70,7 +70,7 @@ export default function OrderEntryPage() {
         if (savedItemsRaw) {
           const parsedItems = JSON.parse(savedItemsRaw);
           if (Array.isArray(parsedItems) && parsedItems.length > 0) {
-            setMenuItems(parsedItems.map((item: any) => ({ 
+            setMenuItems(parsedItems.map((item: any) => ({
               id: item.id || `ITEM_UNKNOWN_${Math.random().toString(36).substr(2, 9)}`,
               name: item.name || 'Unknown Item',
               category: item.category || 'Uncategorized',
@@ -84,15 +84,13 @@ export default function OrderEntryPage() {
             return;
           }
         }
-        // If localStorage is empty or items are not an array or empty array, use fallback and potentially log an error or use default mocks.
-        // For now, we'll clear to an empty array if nothing valid is found.
         setMenuItems(initialMockMenuItemsForFallback);
       } catch (e) {
         console.error("Failed to load menu items from localStorage for order page", e);
-        setMenuItems(initialMockMenuItemsForFallback); 
+        setMenuItems(initialMockMenuItemsForFallback);
       }
     } else {
-       setMenuItems(initialMockMenuItemsForFallback); 
+       setMenuItems(initialMockMenuItemsForFallback);
     }
   }, []);
 
@@ -121,11 +119,11 @@ export default function OrderEntryPage() {
   const handleVariantSelected = (baseItem: MenuItem, variant: MenuItemVariant) => {
     const orderItem: OrderItem = {
       ...baseItem,
-      id: `${baseItem.id}${variant.idSuffix}`, 
+      id: `${baseItem.id}${variant.idSuffix}`,
       name: `${baseItem.name} (${variant.size || variant.type})`,
       price: variant.price,
       quantity: 1,
-      variants: undefined, 
+      variants: undefined,
     };
     addItemToOrder(orderItem, true);
     setIsVariantDialogOpen(false);
@@ -135,7 +133,7 @@ export default function OrderEntryPage() {
   const addItemToOrder = (itemToAdd: OrderItem | MenuItem, isVariant: boolean = false) => {
      setCurrentOrder((prevOrder) => {
       const existingItem = prevOrder.find((orderItem) => orderItem.id === itemToAdd.id);
-      
+
       if (existingItem) {
         return prevOrder.map((orderItem) =>
           orderItem.id === itemToAdd.id ? { ...orderItem, quantity: orderItem.quantity + 1 } : orderItem
@@ -192,7 +190,7 @@ export default function OrderEntryPage() {
       const orderDescription = currentOrder
         .map(item => `${item.quantity}x ${item.name}`)
         .join(', ');
-      
+
       const input: GetUpsellSuggestionsInput = { orderDescription };
       const result = await getUpsellSuggestions(input);
       setAiSuggestions(result.suggestions);
@@ -216,13 +214,13 @@ export default function OrderEntryPage() {
       } else {
         setAiSuggestions([]);
       }
-    }, 500); 
+    }, 500);
 
     return () => clearTimeout(debounceTimer);
   }, [currentOrder, fetchAiSuggestions]);
 
   const handleSaveOrder = () => {
-    if (!pageParamId) return; 
+    if (!pageParamId) return;
 
     if (currentOrder.length === 0) {
       toast({
@@ -234,7 +232,7 @@ export default function OrderEntryPage() {
       return;
     }
 
-    const newOrderId = pageParamId === 'new' || !pageParamId.startsWith('ORD') 
+    const newOrderId = pageParamId === 'new' || !pageParamId.startsWith('ORD')
       ? `ORD-${Date.now().toString().slice(-6)}`
       : pageParamId.toUpperCase();
     const orderTableId = pageParamId === 'new' ? 'Counter' : (pageParamId.startsWith('ORD') ? 'Takeout' : pageParamId.toUpperCase());
@@ -255,7 +253,7 @@ export default function OrderEntryPage() {
         category: item.category,
         imageUrl: item.imageUrl,
         description: item.description,
-        availability: item.availability, 
+        availability: item.availability,
         'data-ai-hint': item['data-ai-hint'],
       })),
     };
@@ -264,26 +262,26 @@ export default function OrderEntryPage() {
       try {
         const existingSavedOrdersRaw = localStorage.getItem(USER_SAVED_ORDERS_KEY);
         let existingSavedOrders = existingSavedOrdersRaw ? JSON.parse(existingSavedOrdersRaw) : [];
-        
+
         const existingOrderIndex = existingSavedOrders.findIndex((order: any) => order.id === newOrderId);
         if (existingOrderIndex > -1) {
-          existingSavedOrders[existingOrderIndex] = newOrderForStorage; 
+          existingSavedOrders[existingOrderIndex] = newOrderForStorage;
         } else {
-          existingSavedOrders.push(newOrderForStorage); 
+          existingSavedOrders.push(newOrderForStorage);
         }
-        
+
         localStorage.setItem(USER_SAVED_ORDERS_KEY, JSON.stringify(existingSavedOrders));
-        
+
         toast({
           title: "Order Saved!",
           description: `Order ${newOrderId} for ${orderTableId} has been saved.`,
         });
 
-        if (pageParamId === 'new') { 
+        if (pageParamId === 'new') {
           setCurrentOrder([]);
           setAiSuggestions([]);
         }
-        router.push('/orders'); 
+        router.push('/orders');
 
       } catch (e) {
         console.error("Failed to save order to localStorage", e);
@@ -308,12 +306,12 @@ export default function OrderEntryPage() {
       });
       return;
     }
-    
-    const paymentOrderId = pageParamId === 'new' || !pageParamId.startsWith('ORD') 
-      ? `ORD-PAY-${Date.now().toString().slice(-6)}` 
+
+    const paymentOrderId = pageParamId === 'new' || !pageParamId.startsWith('ORD')
+      ? `ORD-PAY-${Date.now().toString().slice(-6)}`
       : pageParamId.toUpperCase();
     const orderTableId = pageParamId === 'new' ? 'Counter' : (pageParamId.startsWith('ORD') ? 'Takeout' : pageParamId.toUpperCase());
-    
+
     const paymentOrderData = {
       id: paymentOrderId,
       table: orderTableId,
@@ -322,7 +320,7 @@ export default function OrderEntryPage() {
       status: 'PendingPayment',
       server: authUser?.username || 'Staff',
       time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      orderDetails: currentOrder.map(item => ({ 
+      orderDetails: currentOrder.map(item => ({
         id: item.id,
         name: item.name,
         quantity: item.quantity,
@@ -334,7 +332,7 @@ export default function OrderEntryPage() {
         'data-ai-hint': item['data-ai-hint'],
       })),
     };
-    
+
     if (typeof window !== 'undefined') {
       try {
         const existingSavedOrdersRaw = localStorage.getItem(USER_SAVED_ORDERS_KEY);
@@ -374,7 +372,7 @@ export default function OrderEntryPage() {
         if (orderToEdit && orderToEdit.orderDetails) {
           const validatedOrderDetails = orderToEdit.orderDetails.map((detail: any) => ({
             ...detail,
-            quantity: detail.quantity || 1, 
+            quantity: detail.quantity || 1,
           }));
           setCurrentOrder(validatedOrderDetails);
         } else if (orderToEdit) {
@@ -407,7 +405,6 @@ export default function OrderEntryPage() {
     if (!selectedItemForVariant || !selectedItemForVariant.variants) return null;
 
     const variants = selectedItemForVariant.variants;
-    // Determine if variants are simple sizes (S, M, L) or similar short lists (e.g., Regular, Large)
     const useHorizontalLayout = variants.length > 0 && variants.length <= 3 && variants.every(v => v.size && v.size.length < 10);
 
     return (
@@ -426,7 +423,7 @@ export default function OrderEntryPage() {
               Choose one of the available options below.
             </DialogDescription>
           </DialogHeader>
-          
+
           {useHorizontalLayout ? (
             <div className="flex justify-center space-x-2 sm:space-x-3 py-4">
               {variants.map((variant) => (
@@ -465,7 +462,7 @@ export default function OrderEntryPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]"> 
+    <div className="flex flex-col h-[calc(100vh-4rem)]">
       <PageHeader title={pageTitle} description={pageParamId === 'new' ? '' : pageDescription}>
          <Button variant="outline" size="sm" onClick={handleSaveOrder} disabled={currentOrder.length === 0}>
             <DollarSign className="mr-2 h-4 w-4" />
@@ -476,7 +473,7 @@ export default function OrderEntryPage() {
             Proceed to Payment
           </Button>
       </PageHeader>
-      
+
       <div className="flex flex-wrap gap-2 mb-4">
         {allCategories.map(category => (
           <Button
@@ -494,10 +491,10 @@ export default function OrderEntryPage() {
       <div className="flex flex-col lg:flex-row gap-6 flex-1 overflow-hidden">
         <Card className="lg:w-2/3 flex flex-col shadow-lg">
           <CardContent className="flex-1 overflow-hidden p-0">
-            <ScrollArea className="h-full p-6 pt-4"> {/* Added pt-4 to give some space below category buttons */}
+            <ScrollArea className="h-full p-6 pt-4">
               {categoriesToDisplay.map(catName => {
                 const itemsInCategory = filteredMenuItems.filter(item => item.category === catName);
-                if (itemsInCategory.length === 0 && selectedCategory !== 'All' && availableMenuItems.length > 0) return null; 
+                if (itemsInCategory.length === 0 && selectedCategory !== 'All' && availableMenuItems.length > 0) return null;
 
                 return (
                   <div key={catName} className="mb-6">
@@ -514,16 +511,16 @@ export default function OrderEntryPage() {
                       {itemsInCategory.map((item) => (
                         <Card
                           key={item.id}
-                          className="flex flex-col overflow-hidden hover:shadow-md transition-all duration-150 ease-in-out hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                          className="flex flex-col overflow-hidden hover:shadow-md transition-all duration-150 ease-in-out hover:scale-[1.02] active:scale-[0.98] cursor-pointer hover:bg-muted/50"
                           onClick={() => handleItemClick(item)}
                         >
                           <div className="relative w-full h-32">
-                            <Image 
-                              src={item.imageUrl} 
-                              alt={item.name} 
-                              layout="fill" 
-                              objectFit="cover" 
-                              data-ai-hint={item['data-ai-hint'] || `${item.category.toLowerCase()} food`} 
+                            <Image
+                              src={item.imageUrl}
+                              alt={item.name}
+                              layout="fill"
+                              objectFit="cover"
+                              data-ai-hint={item['data-ai-hint'] || `${item.category.toLowerCase()} food`}
                             />
                           </div>
                           <div className="p-2 flex flex-col flex-grow">
@@ -549,7 +546,7 @@ export default function OrderEntryPage() {
         </Card>
 
         <div className="lg:w-1/3 flex flex-col gap-6 overflow-hidden">
-          <Card className="flex-1 flex flex-col shadow-lg max-h-[65%]"> 
+          <Card className="flex-1 flex flex-col shadow-lg max-h-[65%]">
             <CardHeader>
               <CardTitle className="flex items-center">
                 <ShoppingCart className="mr-2 h-5 w-5 text-primary" />
@@ -600,7 +597,7 @@ export default function OrderEntryPage() {
             )}
           </Card>
 
-          <Card className="flex-1 flex flex-col shadow-lg min-h-[30%]"> 
+          <Card className="flex-1 flex flex-col shadow-lg min-h-[30%]">
             <CardHeader>
               <CardTitle className="flex items-center">
                 <Lightbulb className="mr-2 h-5 w-5 text-accent" />
@@ -621,16 +618,16 @@ export default function OrderEntryPage() {
                 <ul className="space-y-2">
                   {aiSuggestions.map((suggestion, index) => (
                     <li key={index}>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="w-full justify-start text-left h-auto py-2 hover:border-accent hover:text-accent"
                         onClick={() => {
-                          const suggestedBaseItem = menuItems.find(mi => 
+                          const suggestedBaseItem = menuItems.find(mi =>
                             mi.availability && suggestion.toLowerCase().includes(mi.name.toLowerCase())
                           );
-                          
+
                           if (suggestedBaseItem) {
-                            handleItemClick(suggestedBaseItem); 
+                            handleItemClick(suggestedBaseItem);
                             toast({ title: "Suggestion added!", description: `Considered: ${suggestion}. Please select options if prompted.`});
                           } else {
                              toast({ title: "Suggestion", description: `Consider: ${suggestion}`});
