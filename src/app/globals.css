@@ -131,7 +131,7 @@ body {
 
 .text-rgb-animate {
   animation: rgb-cycle 8s linear infinite;
-  color: inherit; 
+  /* color: inherit; */ /* Removed this line */
 }
 
 @keyframes logoIconPulse {
