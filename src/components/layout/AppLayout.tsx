@@ -126,9 +126,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 {/* Placeholder for AppLogo or Title if needed */}
                 <div></div> 
                 <SidebarTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <MenuIcon className="h-6 w-6" />
-                  </Button>
+                  <> {/* Added fragment */}
+                    <Button variant="ghost" size="icon">
+                      <MenuIcon className="h-6 w-6" />
+                    </Button>
+                  </> {/* Added fragment */}
                 </SidebarTrigger>
               </div>
             )}
