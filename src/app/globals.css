@@ -138,10 +138,10 @@ body {
   }
 }
 
-@keyframes text-drop-in {
+@keyframes letter-reveal {
   0% {
     opacity: 0;
-    transform: translateY(-15px); /* Start slightly above */
+    transform: translateY(10px);
   }
   100% {
     opacity: 1;
@@ -149,33 +149,22 @@ body {
   }
 }
 
-/* Original individual animation classes - can be removed if AppLogo was only consumer */
-/*
-.text-rgb-animate {
-  animation: rgb-cycle 8s linear infinite;
-}
-
-.animate-logo-icon-pulse {
-  animation: logoIconPulse 2.5s ease-in-out infinite;
-}
-
-.animate-text-drop-in {
-  animation: text-drop-in 0.7s ease-out forwards;
-  opacity: 0; 
-}
-*/
-
-/* NEW Combined animation classes */
 .animated-logo-icon {
-  /* text-rgb-animate and animate-logo-icon-pulse combined */
   animation: 
     rgb-cycle 8s linear infinite,
     logoIconPulse 2.5s ease-in-out infinite;
 }
 
-.animated-seera-text {
-  opacity: 0; /* Initial state for the drop-in animation */
-  animation:
-    text-drop-in 0.7s ease-out forwards, /* This will run once and hold */
-    rgb-cycle 8s linear infinite;        /* RGB cycle starts immediately */
+.seera-text-container {
+  /* Applies RGB cycle to all child letters */
+  animation: rgb-cycle 8s linear infinite;
+}
+
+.seera-text-container .letter {
+  display: inline-block; /* Crucial for transform and layout */
+  opacity: 0; /* Start hidden, animation will make it visible */
+  animation-name: letter-reveal;
+  animation-duration: 0.4s; /* How long each letter takes to animate in */
+  animation-fill-mode: forwards; /* Retain the final state of the animation */
+  animation-timing-function: ease-out;
 }
