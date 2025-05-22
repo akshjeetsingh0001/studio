@@ -14,7 +14,7 @@ body {
     --foreground: 220 10% 25%; /* Dark, slightly desaturated cool grey */
 
     --muted: 220 25% 94%; /* Lighter grey for muted elements */
-    --muted-foreground: 220 10% 35%; /* Softer, darker grey for muted text */
+    --muted-foreground: 220 10% 20%; /* Softer, darker grey for muted text - Made darker for contrast */
 
     --popover: 0 0% 100%; /* Clean white for popovers */
     --popover-foreground: 220 10% 25%;
@@ -43,12 +43,12 @@ body {
 
     /* Sidebar specific theme variables - Light */
     --sidebar-background: transparent;
-    --sidebar-foreground: 220 10% 25%;
-    --sidebar-primary: 170 55% 48%; 
+    --sidebar-foreground: 220 10% 25%; /* Darker text for light mode contrast */
+    --sidebar-primary: 170 55% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 20% 92%; 
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: transparent; 
+    --sidebar-accent: 220 20% 92%;
+    --sidebar-accent-foreground: 0 0% 100%; /* Made white for better contrast */
+    --sidebar-border: transparent;
     --sidebar-ring: 170 55% 48%;
 
     /* Chart Colors - Light Mode */
@@ -58,10 +58,10 @@ body {
     --chart-4: 260 60% 65%;
     --chart-5: 0 65% 60%;
 
-    /* Animated Background Gradient Colors - Light Mode (Luxury) */
-    --animated-bg-light-1: 40 50% 96%;   /* Very light, creamy beige */
-    --animated-bg-light-2: 210 40% 97%; /* Very light, cool silver-blue */
-    --animated-bg-light-3: 0 0% 98%;   /* Almost white, very subtle shimmer */
+    /* Animated Background Gradient Colors - Light Mode (Food-Inspired) */
+    --animated-bg-light-1: 45 70% 94%;   /* Soft creamy yellow/beige */
+    --animated-bg-light-2: 30 80% 90%; /* Light warm peach */
+    --animated-bg-light-3: 80 40% 92%;   /* Very pale, desaturated soft green */
 
     /* New Order Button Gradient - Light Mode */
     --button-new-order-start: 225 65% 55%; /* Primary Blue */
@@ -100,13 +100,13 @@ body {
     --ring: 220 75% 68%; /* Primary color for focus rings */
 
     /* Sidebar specific theme variables - Dark */
-    --sidebar-background: transparent; 
-    --sidebar-foreground: 220 15% 85%; 
-    --sidebar-primary: 170 65% 60%; 
+    --sidebar-background: transparent;
+    --sidebar-foreground: 220 15% 85%;
+    --sidebar-primary: 170 65% 60%;
     --sidebar-primary-foreground: 220 10% 10%;
-    --sidebar-accent: 220 15% 22%; 
+    --sidebar-accent: 220 15% 22%;
     --sidebar-accent-foreground: 220 15% 95%; /* Brighter light grey for hover text */
-    --sidebar-border: transparent; 
+    --sidebar-border: transparent;
     --sidebar-ring: 170 65% 60%;
 
     /* Chart Colors - Dark Mode */
@@ -116,10 +116,10 @@ body {
     --chart-4: 265 65% 70%;
     --chart-5: 0 70% 65%;
 
-    /* Animated Background Gradient Colors - Dark Mode (Luxury) */
-    --animated-bg-dark-1: 220 30% 10%;   /* Very deep, slightly desaturated navy/charcoal */
-    --animated-bg-dark-2: 260 25% 12%; /* Deep, muted purple/indigo */
-    --animated-bg-dark-3: 180 20% 9%;   /* Very dark teal/charcoal */
+    /* Animated Background Gradient Colors - Dark Mode (Food-Inspired) */
+    --animated-bg-dark-1: 25 60% 25%;   /* Deep terracotta/burnt orange */
+    --animated-bg-dark-2: 30 40% 18%; /* Warm dark brown */
+    --animated-bg-dark-3: 0 50% 22%;   /* Muted deep berry red */
 
     /* New Order Button Gradient - Dark Mode */
     --button-new-order-start: 220 75% 68%; /* Primary Blue */
@@ -138,7 +138,7 @@ body {
     @apply border-border;
   }
   body {
-    @apply text-foreground; 
+    @apply text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
 
     /* Light mode animated background */
@@ -194,7 +194,6 @@ body {
     rgb-cycle 8s linear infinite,
     logoIconPulse 2.5s ease-in-out infinite;
 }
-
 
 @keyframes letter-reveal {
   0% {
