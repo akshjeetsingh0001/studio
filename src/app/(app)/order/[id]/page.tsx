@@ -10,8 +10,8 @@ import { Card, CardTitle, CardContent, CardDescription, CardHeader } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
-import { PlusCircle, MinusCircle, Trash2, ShoppingCart, Zap, Lightbulb, DollarSign, CreditCard, AlertTriangle } from 'lucide-react';
-import { getUpsellSuggestions, type GetUpsellSuggestionsInput } from '@/ai/flows/upsell-suggestions';
+import { PlusCircle, MinusCircle, Trash2, ShoppingCart, DollarSign, CreditCard, AlertTriangle } from 'lucide-react';
+// AI related imports removed
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -42,7 +42,7 @@ export interface OrderItem extends MenuItem {
 const USER_MENU_ITEMS_KEY = 'dineSwiftMenuItems';
 const USER_SAVED_ORDERS_KEY = 'dineSwiftUserSavedOrders';
 
-const initialMockMenuItemsForFallback: MenuItem[] = []; // Default to empty if localStorage fails catastrophically
+const initialMockMenuItemsForFallback: MenuItem[] = []; 
 
 export default function OrderEntryPage() {
   const params = useParams();
@@ -54,8 +54,7 @@ export default function OrderEntryPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [currentOrder, setCurrentOrder] = useState<OrderItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
-  const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false);
+  // AI related state removed
 
   const [isVariantDialogOpen, setIsVariantDialogOpen] = useState(false);
   const [selectedItemForVariant, setSelectedItemForVariant] = useState<MenuItem | null>(null);
@@ -180,35 +179,7 @@ export default function OrderEntryPage() {
     ? Array.from(new Set(filteredMenuItems.map(item => item.category))).sort()
     : [selectedCategory];
 
-  const fetchAiSuggestions = useCallback(async () => {
-    if (currentOrder.length === 0) {
-      setAiSuggestions([]);
-      return;
-    }
-    setIsFetchingSuggestions(true);
-    // Removed try...catch block for AI suggestions
-    const orderDescription = currentOrder
-      .map(item => `${item.quantity}x ${item.name}`)
-      .join(', ');
-
-    const input: GetUpsellSuggestionsInput = { orderDescription };
-    const result = await getUpsellSuggestions(input);
-    // If getUpsellSuggestions fails, this point might not be reached, or 'result' could be problematic.
-    setAiSuggestions(result.suggestions); 
-    setIsFetchingSuggestions(false);
-  }, [currentOrder]);
-
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      if (currentOrder.length > 0) {
-        fetchAiSuggestions();
-      } else {
-        setAiSuggestions([]);
-      }
-    }, 500);
-
-    return () => clearTimeout(debounceTimer);
-  }, [currentOrder, fetchAiSuggestions]);
+  // AI suggestion related functions and useEffect removed
 
   const handleSaveOrder = () => {
     if (!pageParamId) return;
@@ -270,7 +241,7 @@ export default function OrderEntryPage() {
 
         if (pageParamId === 'new') {
           setCurrentOrder([]);
-          setAiSuggestions([]);
+          // setAiSuggestions([]); // Removed as AI suggestions are removed
         }
         router.push('/orders');
 
@@ -349,7 +320,7 @@ export default function OrderEntryPage() {
 
     if (pageParamId === 'new') {
       setCurrentOrder([]);
-      setAiSuggestions([]);
+      // setAiSuggestions([]); // Removed
     }
     router.push('/orders');
   };
@@ -537,7 +508,7 @@ export default function OrderEntryPage() {
         </Card>
 
         <div className="lg:w-1/3 flex flex-col gap-6 overflow-hidden">
-          <Card className="flex-1 flex flex-col shadow-lg max-h-[65%]">
+          <Card className="flex-1 flex flex-col shadow-lg"> {/* Removed max-h to allow full height */}
             <CardHeader>
               <CardTitle className="flex items-center">
                 <ShoppingCart className="mr-2 h-5 w-5 text-primary" />
@@ -586,54 +557,8 @@ export default function OrderEntryPage() {
                 </CardContent>
               </>
             )}
-          </Card>
-
-          <Card className="flex-1 flex flex-col shadow-lg min-h-[30%]">
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Lightbulb className="mr-2 h-5 w-5 text-accent" />
-                 AI Upsell Suggestions
-              </CardTitle>
-              <CardDescription>Boost your sales with smart recommendations.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-hidden p-0">
-              <ScrollArea className="h-full p-6 pt-0">
-              {isFetchingSuggestions && <p className="text-muted-foreground text-center">Loading suggestions...</p>}
-              {!isFetchingSuggestions && aiSuggestions.length === 0 && currentOrder.length > 0 && (
-                <p className="text-muted-foreground text-center">No specific suggestions right now. Try adding more items!</p>
-              )}
-              {!isFetchingSuggestions && aiSuggestions.length === 0 && currentOrder.length === 0 && (
-                 <p className="text-muted-foreground text-center">Add items to your order to see suggestions.</p>
-              )}
-              {!isFetchingSuggestions && aiSuggestions.length > 0 && (
-                <ul className="space-y-2">
-                  {aiSuggestions.map((suggestion, index) => (
-                    <li key={index}>
-                      <Button
-                        variant="outline"
-                        className="w-full justify-start text-left h-auto py-2 hover:border-accent hover:text-accent"
-                        onClick={() => {
-                          const suggestedBaseItem = menuItems.find(mi =>
-                            mi.availability && suggestion.toLowerCase().includes(mi.name.toLowerCase())
-                          );
-
-                          if (suggestedBaseItem) {
-                            handleItemClick(suggestedBaseItem);
-                            toast({ title: "Suggestion added!", description: `Considered: ${suggestion}. Please select options if prompted.`});
-                          } else {
-                             toast({ title: "Suggestion", description: `Consider: ${suggestion}`});
-                          }
-                        }}
-                      >
-                        <Zap className="mr-2 h-4 w-4 text-accent/80" /> {suggestion}
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
+          </Card>>
+         {/* AI Suggestions Card removed */}
         </div>
       </div>
       {renderVariantSelectionDialog()}
