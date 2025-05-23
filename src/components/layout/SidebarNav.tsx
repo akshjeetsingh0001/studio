@@ -13,9 +13,8 @@ import {
   SidebarGroupLabel,
   SidebarGroup,
   SidebarGroupContent,
-  useSidebar, 
+  useSidebar,
 } from '@/components/ui/sidebar';
-import AppLogo from '../AppLogo';
 import { ScrollArea } from '../ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from 'next-themes';
@@ -29,7 +28,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Moon, Sun, LogOut } from 'lucide-react'; 
+import { Moon, Sun, LogOut, PanelLeft } from 'lucide-react'; 
 import { useIsMobile } from '@/hooks/use-mobile';
 
 
@@ -68,18 +67,16 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
       variant="sidebar"
     >
       <div className={cn(
-        "flex h-16 items-center px-4",
-        state === 'expanded' && !isMobile ? "justify-start" : "justify-center" 
+        "flex h-16 items-center border-b border-transparent px-2", // Reduced padding for tighter fit
+        state === 'expanded' && !isMobile ? "justify-end" : "justify-center" 
       )}>
-        {/* AppLogo is now the toggle on desktop */}
-        <AppLogo 
-          onClick={!isMobile ? toggleSidebar : undefined}
-          // The group-data-[collapsible=icon] styles on child elements 
-          // in AppLogo might need adjustment if text doesn't hide automatically.
-          // For now, assume sidebar's own CSS handles text visibility of children in collapsed state.
-        />
+        {!isMobile && (
+          <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-9 w-9" aria-label="Toggle sidebar">
+            <PanelLeft className="h-5 w-5" />
+          </Button>
+        )}
       </div>
-      <ScrollArea className="h-[calc(100vh-4rem-3.5rem)]"> {/* Adjusted height for bottom bar */}
+      <ScrollArea className="h-[calc(100vh-4rem-3.5rem)]">
         <SidebarMenu className="p-4">
           {navItemGroups.map((group, groupIndex) => (
             <SidebarGroup key={groupIndex} className="p-0 mb-4">
@@ -98,10 +95,10 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
                           asChild
                           isActive={isActive}
                           className={cn(
-                            "w-full justify-start", // Removed transform effects, they are in sidebarMenuButtonVariants
+                            "w-full justify-start",
                             isActive
                               ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 hover:text-sidebar-primary-foreground"
-                              : "hover:bg-sidebar-accent hover:text-sidebar-primary", // Ensure text color changes
+                              : "hover:bg-sidebar-accent hover:text-sidebar-primary",
                             "group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2"
                           )}
                           tooltip={{ children: item.title, side: "right", align: "center" }}
@@ -121,7 +118,7 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
         </SidebarMenu>
       </ScrollArea>
       {/* User Profile/Theme Section */}
-      <div className="mt-auto p-2">
+      <div className="mt-auto p-2 border-t border-transparent">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
