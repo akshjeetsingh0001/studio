@@ -116,21 +116,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <>
           <SidebarNav navItemGroups={allNavItems} />
           <SidebarInset className="flex flex-col bg-transparent">
-            <div className={cn(
-              "sticky top-0 z-20 flex h-16 items-center border-b border-transparent px-4 backdrop-blur-lg md:px-6",
-               isMobile ? 'justify-end' : 'justify-start' // On desktop, this bar might be empty or just have a trigger if logo is in sidebar
-            )}>
-              {/* AppLogo removed from here */}
-              {isMobile && (
-                <div className="ml-auto"> {/* Ensures trigger is pushed to the right on mobile */}
-                  <SidebarTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MenuIcon className="h-6 w-6" />
-                    </Button>
-                  </SidebarTrigger>
-                </div>
-              )}
-            </div>
+            {/* The top navigation bar has been removed from here */}
             <main className={`flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-transparent`}>
               {children}
             </main>
