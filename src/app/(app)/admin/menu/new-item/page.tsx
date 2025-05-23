@@ -47,7 +47,6 @@ const initialMockCategories = [
     'KUHLAD SPECIALS',
     'SIDES',
     'DIPS',
-    // 'New Category' // Option for manual entry not needed if dynamic
 ];
 
 
@@ -80,6 +79,8 @@ export default function AddNewMenuItemPage() {
       ...data,
       imageUrl: data.imageUrl || `https://placehold.co/100x100.png?text=${data.name.substring(0,2)}`, 
       'data-ai-hint': `${data.category.toLowerCase()} food`,
+      // Note: Adding items with complex variants (like different sizes) is not supported by this form.
+      // That logic currently resides in the initialMockMenuItems definition in the main menu page.
     };
 
     try {
@@ -117,7 +118,7 @@ export default function AddNewMenuItemPage() {
       </PageHeader>
 
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <Card className="shadow-sm">
+        <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>Item Details</CardTitle>
             <CardDescription>Provide information about the menu item.</CardDescription>
@@ -172,7 +173,11 @@ export default function AddNewMenuItemPage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" disabled={isLoading}>
+            <Button 
+              type="submit" 
+              disabled={isLoading}
+              className="transform transition-transform duration-150 ease-in-out hover:scale-105 active:scale-95"
+            >
               <Save className="mr-2 h-4 w-4" />
               {isLoading ? 'Saving...' : 'Save Menu Item'}
             </Button>
