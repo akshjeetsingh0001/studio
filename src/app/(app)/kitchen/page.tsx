@@ -2,7 +2,7 @@
 'use client';
 
 import type React from 'react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { PageHeader } from '@/components/PageHeader';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,23 +15,22 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 const USER_SAVED_ORDERS_KEY = 'dineSwiftUserSavedOrders';
-const KDS_REFRESH_INTERVAL = 5000; // 5 seconds for fetching orders
-const KDS_TIMER_UI_REFRESH_INTERVAL = 1000; // 1 second for updating timer display
-const ORDER_LATE_THRESHOLD_MS = 15 * 60 * 1000; // 15 minutes
+const KDS_REFRESH_INTERVAL = 5000; 
+const KDS_TIMER_UI_REFRESH_INTERVAL = 1000; 
+const ORDER_LATE_THRESHOLD_MS = 15 * 60 * 1000; 
 
 interface StoredOrder {
   id: string;
   table: string;
   total: number;
   status: string;
-  time: string; // Formatted time string like "HH:MM AM/PM"
-  orderPlacedTimestamp?: number; // Precise timestamp when order was effectively placed for KDS
+  time: string; 
+  orderPlacedTimestamp?: number; 
   orderDetails?: OrderItem[];
 }
 
 const relevantStatuses = ['Active', 'PendingPayment', 'Preparing', 'Ready', 'Paid'];
 
-// Helper function to parse time string to a Date object for today
 const parseOrderTimeForToday = (timeStr: string): Date | null => {
   if (!timeStr) return null;
   const [time, modifier] = timeStr.split(' ');
@@ -41,7 +40,7 @@ const parseOrderTimeForToday = (timeStr: string): Date | null => {
   if (isNaN(hours) || isNaN(minutes)) return null;
 
   if (modifier.toUpperCase() === 'PM' && hours < 12) hours += 12;
-  if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0; // Midnight case
+  if (modifier.toUpperCase() === 'AM' && hours === 12) hours = 0; 
 
   const date = new Date();
   date.setHours(hours, minutes, 0, 0);
@@ -63,63 +62,75 @@ export default function KitchenDisplayPage() {
     return () => clearInterval(timerUiInterval);
   }, []);
 
-  const loadKitchenOrders = useCallback(() => {
-    // Removed setIsLoading(true) from here to prevent flicker on auto-refresh
+  const loadRawOrdersFromStorage = useCallback(() => {
     if (typeof window !== 'undefined') {
       try {
         const savedOrdersRaw = localStorage.getItem(USER_SAVED_ORDERS_KEY);
         const allOrders: StoredOrder[] = savedOrdersRaw ? JSON.parse(savedOrdersRaw) : [];
-        
-        let filtered = allOrders.filter(order => relevantStatuses.includes(order.status));
-        
-        const statusOrderPriority = { 
-          'Active': 1, 
-          'PendingPayment': 1, 
-          'Preparing': 2, 
-          'Ready': 3,
-          'Paid': 4 
-        };
-
-        filtered.sort((a, b) => {
-            const timeA = a.orderPlacedTimestamp || parseOrderTimeForToday(a.time)?.getTime() || Date.now();
-            const timeB = b.orderPlacedTimestamp || parseOrderTimeForToday(b.time)?.getTime() || Date.now();
-
-            const priorityA = statusOrderPriority[a.status as keyof typeof statusOrderPriority] ?? 99;
-            const priorityB = statusOrderPriority[b.status as keyof typeof statusOrderPriority] ?? 99;
-            
-            const isALate = (a.status === 'Active' || a.status === 'PendingPayment' || a.status === 'Preparing') && (currentTime - timeA > ORDER_LATE_THRESHOLD_MS);
-            const isBLate = (b.status === 'Active' || b.status === 'PendingPayment' || b.status === 'Preparing') && (currentTime - timeB > ORDER_LATE_THRESHOLD_MS);
-
-            if (isALate && !isBLate) return -1; // Late orders first
-            if (!isALate && isBLate) return 1;
-
-            if ((a.status === 'Active' || a.status === 'PendingPayment') && (b.status === 'Active' || b.status === 'PendingPayment')) {
-                 return timeA - timeB; // Newest (actually oldest by timestamp for FIFO in this group)
-            }
-            if (priorityA !== priorityB) { 
-                return priorityA - priorityB; 
-            }
-            return timeA - timeB; // Oldest first (FIFO) for Preparing, Ready, Paid
-        });
-        setKitchenOrders(filtered);
+        setKitchenOrders(allOrders);
       } catch (e) {
         console.error("Failed to load kitchen orders from localStorage", e);
         toast({ title: "Error Loading Orders", description: "Could not retrieve orders for the kitchen display.", variant: "destructive" });
         setKitchenOrders([]);
-      } finally {
-        if (isLoading) setIsLoading(false); // Only set loading to false on initial load
       }
     }
-  }, [toast, isLoading, currentTime]); // Added currentTime to dependencies to trigger re-sort if needed
+  }, [toast]); // toast is stable
 
   useEffect(() => {
-    setIsLoading(true); // Set loading true on initial mount
-    loadKitchenOrders();
-    const intervalId = setInterval(loadKitchenOrders, KDS_REFRESH_INTERVAL);
-    return () => clearInterval(intervalId);
-  }, [loadKitchenOrders]); // Removed isLoading from here
+    setIsLoading(true);
+    loadRawOrdersFromStorage();
+    setIsLoading(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadRawOrdersFromStorage]); // Runs once after mount because loadRawOrdersFromStorage is stable
 
-  const updateOrderStatus = (orderId: string, newStatus: 'Preparing' | 'Ready') => {
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      loadRawOrdersFromStorage();
+    }, KDS_REFRESH_INTERVAL);
+    return () => clearInterval(intervalId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadRawOrdersFromStorage]); // Runs once after mount
+
+  const sortedAndFilteredKitchenOrders = useMemo(() => {
+    let filtered = kitchenOrders.filter(order => relevantStatuses.includes(order.status));
+    
+    const statusOrderPriority = { 
+      'Active': 1, 
+      'PendingPayment': 1, 
+      'Preparing': 2, 
+      'Ready': 3,
+      'Paid': 4 
+    };
+
+    return filtered.sort((a, b) => {
+        const timeA = a.orderPlacedTimestamp || parseOrderTimeForToday(a.time)?.getTime() || Date.now();
+        const timeB = b.orderPlacedTimestamp || parseOrderTimeForToday(b.time)?.getTime() || Date.now();
+
+        const priorityA = statusOrderPriority[a.status as keyof typeof statusOrderPriority] ?? 99;
+        const priorityB = statusOrderPriority[b.status as keyof typeof statusOrderPriority] ?? 99;
+        
+        const isALate = (a.status === 'Active' || a.status === 'PendingPayment' || a.status === 'Preparing') &&
+                         timeA && (currentTime - timeA > ORDER_LATE_THRESHOLD_MS);
+        const isBLate = (b.status === 'Active' || b.status === 'PendingPayment' || b.status === 'Preparing') &&
+                         timeB && (currentTime - timeB > ORDER_LATE_THRESHOLD_MS);
+
+        if (isALate && !isBLate) return -1; 
+        if (!isALate && isBLate) return 1;
+
+        if ((a.status === 'Active' || a.status === 'PendingPayment') && (b.status === 'Active' || b.status === 'PendingPayment')) {
+             return timeA - timeB; 
+        }
+        if (priorityA !== priorityB) { 
+            return priorityA - priorityB; 
+        }
+        if(timeA !== timeB) {
+            return timeA - timeB; 
+        }
+        return a.id.localeCompare(b.id); // Stable sort tie-breaker
+    });
+  }, [kitchenOrders, currentTime]);
+
+  const updateOrderStatus = useCallback((orderId: string, newStatus: 'Preparing' | 'Ready') => {
     if (typeof window !== 'undefined') {
       try {
         const savedOrdersRaw = localStorage.getItem(USER_SAVED_ORDERS_KEY);
@@ -128,10 +139,9 @@ export default function KitchenDisplayPage() {
 
         if (orderIndex > -1) {
           allOrders[orderIndex].status = newStatus;
-          // Keep original orderPlacedTimestamp, only update formatted time if needed for display
           allOrders[orderIndex].time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }); 
           localStorage.setItem(USER_SAVED_ORDERS_KEY, JSON.stringify(allOrders));
-          loadKitchenOrders(); 
+          loadRawOrdersFromStorage(); 
           toast({
             title: `Order ${orderId} Updated`,
             description: `Status changed to ${newStatus}.`,
@@ -145,7 +155,7 @@ export default function KitchenDisplayPage() {
         toast({ title: "Update Error", description: `Could not update order ${orderId}.`, variant: "destructive" });
       }
     }
-  };
+  }, [toast, loadRawOrdersFromStorage]);
   
   const getActionForOrder = (order: StoredOrder) => {
     if (order.status === 'Active' || order.status === 'PendingPayment') {
@@ -168,7 +178,7 @@ export default function KitchenDisplayPage() {
   const formatElapsedTime = (timestamp?: number): string => {
     if (!timestamp) return 'N/A';
     const elapsedMs = currentTime - timestamp;
-    if (elapsedMs < 0) return '00:00'; // Should not happen
+    if (elapsedMs < 0) return '00:00'; 
     
     const totalSeconds = Math.floor(elapsedMs / 1000);
     const minutes = Math.floor(totalSeconds / 60);
@@ -180,8 +190,8 @@ export default function KitchenDisplayPage() {
     <div className="h-screen flex flex-col bg-muted/30 p-4">
       <PageHeader title="Kitchen Display System" description="Live view of incoming and active orders.">
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => { setIsLoading(true); loadKitchenOrders(); }} disabled={isLoading}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+          <Button variant="outline" onClick={() => { setIsLoading(true); loadRawOrdersFromStorage(); setIsLoading(false); }} disabled={isLoading && kitchenOrders.length > 0}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading && kitchenOrders.length === 0 ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
           <Button variant="outline" onClick={logout}>
@@ -199,19 +209,18 @@ export default function KitchenDisplayPage() {
           </div>
       </div>
 
-
-      {isLoading && kitchenOrders.length === 0 ? (
+      {isLoading && sortedAndFilteredKitchenOrders.length === 0 ? (
         <div className="flex-1 flex items-center justify-center text-muted-foreground">
           <RefreshCw className="mr-2 h-6 w-6 animate-spin" /> Loading orders...
         </div>
-      ) : kitchenOrders.length === 0 ? (
+      ) : sortedAndFilteredKitchenOrders.length === 0 ? (
         <div className="flex-1 flex items-center justify-center text-muted-foreground text-xl">
           No active orders for the kitchen right now.
         </div>
       ) : (
         <ScrollArea className="flex-1">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {kitchenOrders.map((order) => {
+            {sortedAndFilteredKitchenOrders.map((order) => {
               const orderTimestamp = order.orderPlacedTimestamp || parseOrderTimeForToday(order.time)?.getTime();
               const isLate = (order.status === 'Active' || order.status === 'PendingPayment' || order.status === 'Preparing') &&
                              orderTimestamp && (currentTime - orderTimestamp > ORDER_LATE_THRESHOLD_MS);
@@ -278,3 +287,5 @@ export default function KitchenDisplayPage() {
     </div>
   );
 }
+
+    
