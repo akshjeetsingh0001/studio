@@ -12,7 +12,8 @@ import {
   SidebarMenuButton,
   SidebarGroupLabel,
   SidebarGroup,
-  SidebarGroupContent
+  SidebarGroupContent,
+  useSidebar, // Import useSidebar
 } from '@/components/ui/sidebar';
 import AppLogo from '../AppLogo';
 import { ScrollArea } from '../ui/scroll-area';
@@ -28,7 +29,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Moon, Sun, LogOut } from 'lucide-react';
+import { Moon, Sun, LogOut, PanelLeft } from 'lucide-react'; // Import PanelLeft
+import { useIsMobile } from '@/hooks/use-mobile';
+
 
 interface SidebarNavProps {
   navItemGroups: NavItemGroup[];
@@ -39,6 +42,8 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { state, toggleSidebar } = useSidebar(); // Get sidebar state and toggle function
+  const isMobile = useIsMobile();
 
   const getInitials = (name: string | undefined) => {
     if (!name) return 'U';
@@ -63,8 +68,22 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
       variant="sidebar"
     >
       <div className="flex h-16 items-center justify-center px-4">
-         <AppLogo className="group-data-[collapsible=icon]:hidden" />
-         <AppLogo iconSize={24} textSize="text-lg" className="hidden group-data-[collapsible=icon]:flex" />
+         {state === 'collapsed' && !isMobile ? (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={toggleSidebar} 
+              className="group-data-[collapsible=icon]:mx-auto"
+              aria-label="Expand sidebar"
+            >
+              <PanelLeft />
+            </Button>
+         ) : (
+           <>
+            <AppLogo className="group-data-[collapsible=icon]:hidden" />
+            <AppLogo iconSize={24} textSize="text-lg" className="hidden group-data-[collapsible=icon]:flex" />
+           </>
+         )}
       </div>
       <ScrollArea className="h-[calc(100vh-4rem-3.5rem)]"> {/* Adjusted height for bottom bar */}
         <SidebarMenu className="p-4">
@@ -85,7 +104,7 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
                           asChild
                           isActive={isActive}
                           className={cn(
-                            "w-full justify-start transform transition-transform duration-150 ease-in-out hover:-translate-y-0.5",
+                            "w-full justify-start transform transition-transform duration-150 ease-in-out hover:text-sidebar-primary hover:-translate-y-0.5",
                             isActive
                               ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90 hover:text-sidebar-primary-foreground"
                               : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",

@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { SidebarNav } from './SidebarNav';
 import { primaryNavItems, secondaryNavItems } from '@/config/nav';
-import { Loader2, Menu as MenuIcon } from 'lucide-react'; // Added MenuIcon
+import { Loader2, Menu as MenuIcon } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 
@@ -66,6 +66,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   
   if (!isAuthenticated && pathname !== '/login') {
+    // This case should ideally be caught by the useEffect and redirect.
+    // Showing a loader here is a fallback.
     return (
       <div className="flex h-screen items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -78,6 +80,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   if (isAuthenticated && user) {
     
     if (pathname === '/login') {
+        // User is authenticated but somehow on the login page, redirect them.
         return (
             <div className="flex h-screen items-center justify-center">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -90,6 +93,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     if (user.role === 'kitchen') {
       
       if (pathname !== '/kitchen') {
+        // Kitchen user trying to access a non-kitchen page.
+        // useEffect should handle redirection. Show loader as fallback.
         return (
           <div className="flex h-screen items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -98,6 +103,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         );
       }
       
+      // Render Kitchen Display System (no sidebar)
       return (
         <div className="animate-fadeIn h-screen overflow-y-auto bg-muted/30">
           {children}
@@ -107,6 +113,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     
     
     if (user.role !== 'kitchen' && pathname === '/kitchen') {
+      // Admin/other user trying to access kitchen page.
+      // useEffect should handle redirection. Show loader as fallback.
       return (
         <div className="flex h-screen items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -116,9 +124,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     }
 
     
+    // Regular app layout for non-kitchen users
     const allNavItems = [...primaryNavItems, ...secondaryNavItems];
     return (
-      <SidebarProvider defaultOpen={!isMobile}>
+      <SidebarProvider defaultOpen={false}> {/* Sidebar starts collapsed on desktop, closed on mobile */}
           <SidebarNav navItemGroups={allNavItems} />
           <SidebarInset className="flex flex-col">
             {isMobile && (
@@ -126,15 +135,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 {/* Placeholder for AppLogo or Title if needed */}
                 <div></div> 
                 <SidebarTrigger asChild>
-                  <> {/* Added fragment */}
-                    <Button variant="ghost" size="icon">
-                      <MenuIcon className="h-6 w-6" />
-                    </Button>
-                  </> {/* Added fragment */}
+                  <Button variant="ghost" size="icon">
+                    <MenuIcon className="h-6 w-6" />
+                  </Button>
                 </SidebarTrigger>
               </div>
             )}
-            <main className={`flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 ${isMobile ? 'pt-20' : ''}`}>
+            <main className={`flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 ${isMobile ? 'pt-4' : ''}`}> {/* Adjusted mobile padding-top */}
               {children}
             </main>
           </SidebarInset>
@@ -143,6 +150,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }
   
   
+  // Fallback if user is somehow null after loading and not on login page
   return (
     <div className="flex h-screen items-center justify-center">
       <Loader2 className="h-8 w-8 animate-spin text-primary" />
