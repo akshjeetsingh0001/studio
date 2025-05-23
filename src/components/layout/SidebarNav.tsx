@@ -13,7 +13,7 @@ import {
   SidebarGroupLabel,
   SidebarGroup,
   SidebarGroupContent,
-  useSidebar, // Import useSidebar
+  useSidebar, 
 } from '@/components/ui/sidebar';
 import AppLogo from '../AppLogo';
 import { ScrollArea } from '../ui/scroll-area';
@@ -29,7 +29,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Moon, Sun, LogOut, PanelLeft } from 'lucide-react'; // Import PanelLeft
+import { Moon, Sun, LogOut, PanelLeft } from 'lucide-react'; 
 import { useIsMobile } from '@/hooks/use-mobile';
 
 
@@ -42,7 +42,7 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { state, toggleSidebar } = useSidebar(); // Get sidebar state and toggle function
+  const { state, toggleSidebar } = useSidebar(); 
   const isMobile = useIsMobile();
 
   const getInitials = (name: string | undefined) => {
@@ -67,23 +67,27 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
       collapsible="icon"
       variant="sidebar"
     >
-      <div className="flex h-16 items-center justify-center px-4">
-         {state === 'collapsed' && !isMobile ? (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={toggleSidebar} 
-              className="group-data-[collapsible=icon]:mx-auto"
-              aria-label="Expand sidebar"
-            >
-              <PanelLeft />
-            </Button>
-         ) : (
-           <>
-            <AppLogo className="group-data-[collapsible=icon]:hidden" />
-            <AppLogo iconSize={24} textSize="text-lg" className="hidden group-data-[collapsible=icon]:flex" />
-           </>
-         )}
+      <div className={cn(
+        "flex h-16 items-center px-4",
+        state === 'expanded' && !isMobile ? "justify-between" : "justify-center"
+      )}>
+        {/* Show AppLogo only when sidebar is expanded and not on mobile */}
+        {!isMobile && state === 'expanded' && (
+          <AppLogo />
+        )}
+
+        {/* Always show toggle button on desktop */}
+        {!isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            aria-label={state === 'expanded' ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            <PanelLeft /> {/* Using PanelLeft as a general toggle icon */}
+          </Button>
+        )}
+        {/* For mobile, the toggle is in AppLayout, not here. */}
       </div>
       <ScrollArea className="h-[calc(100vh-4rem-3.5rem)]"> {/* Adjusted height for bottom bar */}
         <SidebarMenu className="p-4">
@@ -173,3 +177,4 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
     </Sidebar>
   );
 }
+
