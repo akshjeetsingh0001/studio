@@ -18,20 +18,11 @@ import {
 import { ScrollArea } from '../ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from 'next-themes';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Moon, Sun, LogOut, PanelLeft } from 'lucide-react'; 
+import { Moon, Sun, LogOut, PanelLeft } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import AppLogo from '@/components/AppLogo';
-
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SidebarNavProps {
   navItemGroups: NavItemGroup[];
@@ -42,17 +33,8 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { state, toggleSidebar } = useSidebar(); 
+  const { state, toggleSidebar } = useSidebar();
   const isMobile = useIsMobile();
-
-  const getInitials = (name: string | undefined) => {
-    if (!name) return 'U';
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase();
-  };
 
   if (!navItemGroups?.length) {
     return null;
@@ -68,17 +50,17 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
       variant="sidebar"
     >
       <div className={cn(
-        "flex h-16 items-center px-2", 
-        state === 'expanded' && !isMobile ? "justify-between" : "justify-center" 
+        "flex h-16 items-center px-2",
+        state === 'expanded' && !isMobile ? "justify-between" : "justify-center"
       )}>
-        {state === 'expanded' && !isMobile && <AppLogo />}
+        {state === 'expanded' && !isMobile && <AppLogo onClick={!isMobile ? toggleSidebar : undefined} />}
         {!isMobile && (
           <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-9 w-9" aria-label="Toggle sidebar">
             <PanelLeft className="h-5 w-5" />
           </Button>
         )}
       </div>
-      <ScrollArea className="h-[calc(100vh-4rem-3.5rem)]">
+      <ScrollArea className="h-[calc(100vh-4rem-5rem)]"> {/* Adjusted height for bottom section */}
         <SidebarMenu className="p-4">
           {navItemGroups.map((group, groupIndex) => (
             <SidebarGroup key={groupIndex} className="p-0 mb-4">
@@ -119,49 +101,56 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
           ))}
         </SidebarMenu>
       </ScrollArea>
-      {/* User Profile/Theme Section */}
-      <div className="mt-auto p-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              className="w-full h-auto p-1.5 flex items-center justify-start group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:h-auto group-data-[collapsible=icon]:aspect-square group-data-[collapsible=icon]:p-1 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              aria-label="User menu"
-            >
-              <Avatar className="h-7 w-7 group-data-[collapsible=icon]:h-6 group-data-[collapsible=icon]:w-6">
-                <AvatarImage src={`https://placehold.co/100x100.png?text=${getInitials(user?.username)}`} alt={user?.username || 'User'} data-ai-hint="user avatar" />
-                <AvatarFallback>{getInitials(user?.username)}</AvatarFallback>
-              </Avatar>
-              <span className="ml-2 text-sm font-medium group-data-[collapsible=icon]:hidden">{user?.username}</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent side="top" align="start" className="w-56 mb-1 ml-1 z-50">
-            {user && (
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{user.username}</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {user.username}@example.com
-                  </p>
-                </div>
-              </DropdownMenuLabel>
+
+      {/* Bottom Section: AppLogo and actions */}
+      <div className="mt-auto p-2 border-t border-sidebar-border/20 group-data-[collapsible=icon]:border-t-0">
+        <div className={cn("flex flex-col items-center", state === 'expanded' ? 'items-center' : 'items-center')}>
+          <AppLogo
+            iconSize={state === 'expanded' ? 24 : 28}
+            textSize={state === 'expanded' ? "text-2xl" : "hidden"}
+            onClick={!isMobile ? toggleSidebar : undefined}
+            className={cn(
+              "py-2",
+              state === 'collapsed' && !isMobile && "py-3" // Adjust padding for collapsed icon-only logo
             )}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-              {theme === 'dark' ? (
-                <Sun className="mr-2 h-4 w-4" />
-              ) : (
-                <Moon className="mr-2 h-4 w-4" />
-              )}
-              <span>Toggle Theme</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={logout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Log out</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+          />
+          {state === 'expanded' && !isMobile && (
+            <div className="flex w-full justify-around items-center mt-2 pt-2 border-t border-sidebar-border/20">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                    className="h-8 w-8 hover:bg-sidebar-accent hover:text-sidebar-primary"
+                    aria-label="Toggle theme"
+                  >
+                    {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" align="center">
+                  <p>Toggle Theme ({theme === 'dark' ? 'Light' : 'Dark'})</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={logout}
+                    className="h-8 w-8 hover:bg-sidebar-accent hover:text-sidebar-primary"
+                    aria-label="Log out"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" align="center">
+                  <p>Log Out</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          )}
+        </div>
       </div>
     </Sidebar>
   );
