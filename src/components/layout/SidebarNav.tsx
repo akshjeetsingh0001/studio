@@ -51,16 +51,17 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
     >
       <div className={cn(
         "flex h-16 items-center px-2",
-        state === 'expanded' && !isMobile ? "justify-between" : "justify-center"
+        // When expanded, push the toggle button to the right. When collapsed, center the toggle button.
+        state === 'expanded' && !isMobile ? "justify-end" : "justify-center"
       )}>
-        {state === 'expanded' && !isMobile && <AppLogo onClick={!isMobile ? toggleSidebar : undefined} />}
-        {!isMobile && (
+        {/* This is the desktop toggle button for the sidebar. AppLogo is at the bottom. */}
+        {!isMobile && ( // Only show this for desktop
           <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-9 w-9" aria-label="Toggle sidebar">
             <PanelLeft className="h-5 w-5" />
           </Button>
         )}
       </div>
-      <ScrollArea className="h-[calc(100vh-4rem-5rem)]"> {/* Adjusted height for bottom section */}
+      <ScrollArea className="h-[calc(100vh-4rem-6.5rem)]"> {/* Adjusted height for bottom section */}
         <SidebarMenu className="p-4">
           {navItemGroups.map((group, groupIndex) => (
             <SidebarGroup key={groupIndex} className="p-0 mb-4">
@@ -103,15 +104,15 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
       </ScrollArea>
 
       {/* Bottom Section: AppLogo and actions */}
-      <div className="mt-auto p-2 border-t border-sidebar-border/20 group-data-[collapsible=icon]:border-t-0">
+      <div className="mt-auto p-2 group-data-[collapsible=icon]:border-t-0">
         <div className={cn("flex flex-col items-center", state === 'expanded' ? 'items-center' : 'items-center')}>
           <AppLogo
             iconSize={state === 'expanded' ? 24 : 28}
             textSize={state === 'expanded' ? "text-2xl" : "hidden"}
-            onClick={!isMobile ? toggleSidebar : undefined}
+            onClick={!isMobile ? toggleSidebar : undefined} // Logo itself toggles sidebar on desktop
             className={cn(
               "py-2",
-              state === 'collapsed' && !isMobile && "py-3" // Adjust padding for collapsed icon-only logo
+              state === 'collapsed' && !isMobile && "py-3" 
             )}
           />
           {state === 'expanded' && !isMobile && (
