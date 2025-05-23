@@ -58,7 +58,9 @@ export default function OrderEntryPage() {
   const [selectedItemForVariant, setSelectedItemForVariant] = useState<MenuItem | null>(null);
 
   const pageTitle = pageParamId === 'new' ? 'New Order' : `Order for ${pageParamId?.toUpperCase()}`;
+  // const pageDescription = pageParamId === 'new' ? 'Start a new customer order.' : `Manage order for Table/ID: ${pageParamId?.toUpperCase()}`;
   const pageDescription = pageParamId === 'new' ? '' : `Manage order for Table/ID: ${pageParamId?.toUpperCase()}`;
+
 
   const loadMenuItemsFromStorage = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -177,7 +179,7 @@ export default function OrderEntryPage() {
     ? Array.from(new Set(filteredMenuItems.map(item => item.category))).sort()
     : [selectedCategory];
 
-  const handleSaveOrder = () => {
+  const handleSaveOrder = (status: 'Active' | 'PendingPayment' = 'Active') => {
     if (!pageParamId) return;
 
     if (currentOrder.length === 0) {
@@ -200,9 +202,10 @@ export default function OrderEntryPage() {
       table: orderTableId,
       items: currentOrder.reduce((sum, item) => sum + item.quantity, 0),
       total: calculateTotal(),
-      status: 'Active',
+      status: status,
       server: authUser?.username || 'Staff',
       time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      orderPlacedTimestamp: Date.now(), // Add precise timestamp
       orderDetails: currentOrder.map(item => ({
         id: item.id,
         name: item.name,
@@ -231,8 +234,8 @@ export default function OrderEntryPage() {
         localStorage.setItem(USER_SAVED_ORDERS_KEY, JSON.stringify(existingSavedOrders));
 
         toast({
-          title: "Order Saved!",
-          description: `Order ${newOrderId} for ${orderTableId} has been saved.`,
+          title: status === 'PendingPayment' ? "Order Sent to Payment" : "Order Saved!",
+          description: `Order ${newOrderId} for ${orderTableId} has been processed.`,
         });
 
         if (pageParamId === 'new') {
@@ -252,71 +255,7 @@ export default function OrderEntryPage() {
   };
 
   const handleProceedToPayment = () => {
-    if (!pageParamId) return;
-
-    if (currentOrder.length === 0) {
-      toast({
-        title: "Empty Order",
-        description: "No items in the order to proceed to payment.",
-        variant: "destructive",
-        icon: <AlertTriangle className="h-4 w-4" />,
-      });
-      return;
-    }
-
-    const paymentOrderId = pageParamId === 'new' || !pageParamId.startsWith('ORD')
-      ? `ORD-PAY-${Date.now().toString().slice(-6)}`
-      : pageParamId.toUpperCase();
-    const orderTableId = pageParamId === 'new' ? 'Counter' : (pageParamId.startsWith('ORD') ? 'Takeout' : pageParamId.toUpperCase());
-
-    const paymentOrderData = {
-      id: paymentOrderId,
-      table: orderTableId,
-      items: currentOrder.reduce((sum, item) => sum + item.quantity, 0),
-      total: calculateTotal(),
-      status: 'PendingPayment',
-      server: authUser?.username || 'Staff',
-      time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      orderDetails: currentOrder.map(item => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-        category: item.category,
-        imageUrl: item.imageUrl,
-        description: item.description,
-        availability: item.availability,
-        'data-ai-hint': item['data-ai-hint'],
-      })),
-    };
-
-    if (typeof window !== 'undefined') {
-      try {
-        const existingSavedOrdersRaw = localStorage.getItem(USER_SAVED_ORDERS_KEY);
-        let existingSavedOrders = existingSavedOrdersRaw ? JSON.parse(existingSavedOrdersRaw) : [];
-
-        const existingOrderIndex = existingSavedOrders.findIndex((order: any) => order.id === paymentOrderId);
-        if (existingOrderIndex > -1) {
-          existingSavedOrders[existingOrderIndex] = paymentOrderData;
-        } else {
-          existingSavedOrders.push(paymentOrderData);
-        }
-        localStorage.setItem(USER_SAVED_ORDERS_KEY, JSON.stringify(existingSavedOrders));
-      } catch (e) {
-        console.error("Failed to save order for payment to localStorage", e);
-      }
-    }
-
-    console.log("Proceeding to Payment (Simulated):", paymentOrderData);
-    toast({
-      title: "Proceeding to Payment",
-      description: `Order ${paymentOrderData.id} for ${orderTableId} is being processed for payment.`,
-    });
-
-    if (pageParamId === 'new') {
-      setCurrentOrder([]);
-    }
-    router.push('/orders');
+    handleSaveOrder('PendingPayment');
   };
 
   useEffect(() => {
@@ -418,17 +357,17 @@ export default function OrderEntryPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
-      <PageHeader title={pageTitle} description={pageParamId === 'new' ? '' : pageDescription}>
-         <Button variant="outline" size="sm" onClick={handleSaveOrder} disabled={currentOrder.length === 0}>
-            <DollarSign className="mr-2 h-4 w-4" />
-            Save Order
-          </Button>
-          <Button size="sm" onClick={handleProceedToPayment} disabled={currentOrder.length === 0}>
-            <CreditCard className="mr-2 h-4 w-4" />
-            Proceed to Payment
-          </Button>
-      </PageHeader>
+    <div className="flex flex-col h-[calc(100vh-4rem)]"> {/* Adjust height if header changes */}
+        <PageHeader title={pageTitle} description={pageDescription}>
+           <Button variant="outline" size="sm" onClick={() => handleSaveOrder('Active')} disabled={currentOrder.length === 0}>
+              <DollarSign className="mr-2 h-4 w-4" />
+              Save Order
+            </Button>
+            <Button size="sm" onClick={handleProceedToPayment} disabled={currentOrder.length === 0}>
+              <CreditCard className="mr-2 h-4 w-4" />
+              Proceed to Payment
+            </Button>
+        </PageHeader>
 
       <div className="flex flex-wrap gap-2 mb-4">
         {allCategories.map(category => (
@@ -447,7 +386,7 @@ export default function OrderEntryPage() {
       <div className="flex flex-col lg:flex-row gap-6 flex-1 overflow-hidden">
         <Card className="lg:w-2/3 flex flex-col shadow-lg">
           <CardContent className="flex-1 overflow-hidden p-0">
-            <ScrollArea className="h-full p-6 pt-4">
+            <ScrollArea className="h-full p-6 pt-0"> {/* Removed pt-4 to make category title align with content */}
               {categoriesToDisplay.map(catName => {
                 const itemsInCategory = filteredMenuItems.filter(item => item.category === catName);
                 if (itemsInCategory.length === 0 && selectedCategory !== 'All' && availableMenuItems.length > 0) return null;
@@ -470,7 +409,7 @@ export default function OrderEntryPage() {
                           className="flex flex-col overflow-hidden hover:shadow-md transition-all duration-150 ease-in-out hover:scale-[1.02] active:scale-[0.98] cursor-pointer hover:bg-muted/50"
                           onClick={() => handleItemClick(item)}
                         >
-                          <div className="relative w-full h-32">
+                          <div className="relative w-full h-32"> {/* Adjusted from h-40 */}
                             <Image
                               src={item.imageUrl}
                               alt={item.name}
@@ -479,7 +418,7 @@ export default function OrderEntryPage() {
                               data-ai-hint={item['data-ai-hint'] || `${item.category.toLowerCase()} food`}
                             />
                           </div>
-                          <div className="p-2 flex flex-col flex-grow">
+                          <div className="p-2 flex flex-col flex-grow"> {/* Adjusted from p-3 */}
                             <div className="flex-grow mb-1">
                               <CardTitle className="text-base font-semibold mb-0.5">{item.name}</CardTitle>
                               <p className="text-sm font-bold text-primary">{getDisplayPrice(item)}</p>
@@ -501,7 +440,7 @@ export default function OrderEntryPage() {
           </CardContent>
         </Card>
 
-        <Card className="lg:w-1/3 flex flex-col shadow-lg"> {/* Current Order Card */}
+        <Card className="lg:w-1/3 flex flex-col shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center">
                 <ShoppingCart className="mr-2 h-5 w-5 text-primary" />
