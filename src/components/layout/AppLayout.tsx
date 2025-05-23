@@ -5,115 +5,123 @@ import type React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
-import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarInset, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { SidebarNav } from './SidebarNav';
 import { primaryNavItems, secondaryNavItems } from '@/config/nav';
 import { Loader2, Menu as MenuIcon } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import AppLogo from '@/components/AppLogo';
+import { cn } from '@/lib/utils';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const isMobile = useIsMobile();
+  
+  // We need to consume sidebar context here to conditionally style the header
+  // This means AppLayoutContent needs to be a child of SidebarProvider
+  const AppLayoutContent = () => {
+    const { state: sidebarState } = useSidebar(); // Get sidebar state
 
-  useEffect(() => {
-    if (isLoading) {
-      return; 
-    }
-
-    if (!isAuthenticated) {
-      if (pathname !== '/login') {
-        router.replace('/login');
+    useEffect(() => {
+      if (isLoading) {
+        return; 
       }
-      return; 
+
+      if (!isAuthenticated) {
+        if (pathname !== '/login') {
+          router.replace('/login');
+        }
+        return; 
+      }
+      
+      if (user) {
+        if (pathname === '/login') { 
+          if (user.role === 'kitchen') {
+            router.replace('/kitchen');
+          } else {
+            router.replace('/dashboard');
+          }
+        } else if (user.role === 'kitchen') {
+          if (pathname !== '/kitchen') {
+            router.replace('/kitchen');
+          }
+        } else { 
+          if (pathname === '/kitchen') {
+            router.replace('/dashboard');
+          }
+        }
+      } else {
+        if (pathname !== '/login') {
+          router.replace('/login');
+        }
+      }
+    }, [isAuthenticated, isLoading, user, router, pathname]);
+
+    if (isLoading) {
+      return (
+        <div className="flex h-screen items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      );
     }
     
-    if (user) {
-      if (pathname === '/login') { 
-        if (user.role === 'kitchen') {
-          router.replace('/kitchen');
-        } else {
-          router.replace('/dashboard');
-        }
-      } else if (user.role === 'kitchen') {
+    if (!isAuthenticated && pathname !== '/login') {
+      return (
+        <div className="flex h-screen items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="ml-2">Redirecting to login...</p>
+        </div>
+      );
+    }
+    
+    if (isAuthenticated && user) {
+      if (pathname === '/login') {
+          return (
+              <div className="flex h-screen items-center justify-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="ml-2">Redirecting...</p>
+              </div>
+          );
+      }
+
+      if (user.role === 'kitchen') {
         if (pathname !== '/kitchen') {
-          router.replace('/kitchen');
-        }
-      } else { 
-        if (pathname === '/kitchen') {
-          router.replace('/dashboard');
-        }
-      }
-    } else {
-      if (pathname !== '/login') {
-        router.replace('/login');
-      }
-    }
-  }, [isAuthenticated, isLoading, user, router, pathname]);
-
-  if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-  
-  if (!isAuthenticated && pathname !== '/login') {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="ml-2">Redirecting to login...</p>
-      </div>
-    );
-  }
-  
-  if (isAuthenticated && user) {
-    if (pathname === '/login') {
-        return (
+          return (
             <div className="flex h-screen items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="ml-2">Redirecting...</p>
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+               <p className="ml-2">Redirecting to Kitchen...</p>
             </div>
-        );
-    }
-
-    if (user.role === 'kitchen') {
-      if (pathname !== '/kitchen') {
+          );
+        }
+        
         return (
-          <div className="flex h-screen items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-             <p className="ml-2">Redirecting to Kitchen...</p>
+          <div className="animate-fadeIn h-screen overflow-y-auto bg-transparent">
+            {children}
           </div>
         );
       }
       
-      return (
-        <div className="animate-fadeIn h-screen overflow-y-auto bg-muted/30">
-          {children}
-        </div>
-      );
-    }
-    
-    if (user.role !== 'kitchen' && pathname === '/kitchen') {
-      return (
-        <div className="flex h-screen items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-           <p className="ml-2">Redirecting...</p>
-        </div>
-      );
-    }
+      if (user.role !== 'kitchen' && pathname === '/kitchen') {
+        return (
+          <div className="flex h-screen items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+             <p className="ml-2">Redirecting...</p>
+          </div>
+        );
+      }
 
-    const allNavItems = [...primaryNavItems, ...secondaryNavItems];
-    return (
-      <SidebarProvider defaultOpen={false}>
+      const allNavItems = [...primaryNavItems, ...secondaryNavItems];
+      return (
+        <>
           <SidebarNav navItemGroups={allNavItems} />
           <SidebarInset className="flex flex-col bg-transparent">
-            {/* Header for AppLogo and Mobile Menu Trigger */}
-            <div className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-border/30 bg-background/70 px-4 backdrop-blur-lg md:px-6">
+            <div className={cn(
+              "sticky top-0 z-20 flex h-16 items-center border-b border-border/30 bg-transparent px-4 backdrop-blur-lg md:px-6",
+              !isMobile && sidebarState === 'collapsed' ? 'justify-center' : 'justify-between'
+            )}>
               <AppLogo /> 
               <div className="flex items-center gap-2">
                 {isMobile && (
@@ -123,21 +131,27 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                     </Button>
                   </SidebarTrigger>
                 )}
-                {/* You could add other desktop header items here if needed, like theme toggle or user menu */}
               </div>
             </div>
             <main className={`flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-transparent`}>
               {children}
             </main>
           </SidebarInset>
-      </SidebarProvider>
+        </>
+      );
+    }
+    
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="ml-2">Verifying access...</p>
+      </div>
     );
   }
-  
+
   return (
-    <div className="flex h-screen items-center justify-center">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      <p className="ml-2">Verifying access...</p>
-    </div>
+    <SidebarProvider defaultOpen={false}>
+      <AppLayoutContent />
+    </SidebarProvider>
   );
 }
