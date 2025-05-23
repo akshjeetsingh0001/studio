@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Moon, Sun, LogOut, PanelLeft } from 'lucide-react'; 
 import { useIsMobile } from '@/hooks/use-mobile';
+import AppLogo from '@/components/AppLogo';
 
 
 interface SidebarNavProps {
@@ -67,9 +68,10 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
       variant="sidebar"
     >
       <div className={cn(
-        "flex h-16 items-center border-b border-transparent px-2", // Reduced padding for tighter fit
-        state === 'expanded' && !isMobile ? "justify-end" : "justify-center" 
+        "flex h-16 items-center px-2", 
+        state === 'expanded' && !isMobile ? "justify-between" : "justify-center" 
       )}>
+        {state === 'expanded' && !isMobile && <AppLogo />}
         {!isMobile && (
           <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-9 w-9" aria-label="Toggle sidebar">
             <PanelLeft className="h-5 w-5" />
@@ -118,7 +120,7 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
         </SidebarMenu>
       </ScrollArea>
       {/* User Profile/Theme Section */}
-      <div className="mt-auto p-2 border-t border-transparent">
+      <div className="mt-auto p-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

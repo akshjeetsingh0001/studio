@@ -118,9 +118,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <SidebarInset className="flex flex-col bg-transparent">
             <div className={cn(
               "sticky top-0 z-20 flex h-16 items-center border-b border-transparent px-4 backdrop-blur-lg md:px-6",
-              isMobile ? 'justify-between' : 'justify-center'
+               isMobile ? 'justify-end' : 'justify-start' // On desktop, this bar might be empty or just have a trigger if logo is in sidebar
             )}>
-              <AppLogo /> 
+              {/* AppLogo removed from here */}
               {isMobile && (
                 <div className="ml-auto"> {/* Ensures trigger is pushed to the right on mobile */}
                   <SidebarTrigger asChild>
