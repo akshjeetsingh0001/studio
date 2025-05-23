@@ -20,10 +20,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isMobile = useIsMobile();
   
-  // We need to consume sidebar context here to conditionally style the header
-  // This means AppLayoutContent needs to be a child of SidebarProvider
   const AppLayoutContent = () => {
-    const { state: sidebarState } = useSidebar(); // Get sidebar state
+    const { state: sidebarState } = useSidebar(); 
 
     useEffect(() => {
       if (isLoading) {
@@ -119,19 +117,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           <SidebarNav navItemGroups={allNavItems} />
           <SidebarInset className="flex flex-col bg-transparent">
             <div className={cn(
-              "sticky top-0 z-20 flex h-16 items-center border-b border-border/30 bg-transparent px-4 backdrop-blur-lg md:px-6",
-              !isMobile && sidebarState === 'collapsed' ? 'justify-center' : 'justify-between'
+              "sticky top-0 z-20 flex h-16 items-center border-b border-transparent px-4 backdrop-blur-lg md:px-6",
+              isMobile ? 'justify-between' : 'justify-center'
             )}>
               <AppLogo /> 
-              <div className="flex items-center gap-2">
-                {isMobile && (
+              {isMobile && (
+                <div className="ml-auto"> {/* Ensures trigger is pushed to the right on mobile */}
                   <SidebarTrigger asChild>
                     <Button variant="ghost" size="icon">
                       <MenuIcon className="h-6 w-6" />
                     </Button>
                   </SidebarTrigger>
-                )}
-              </div>
+                </div>
+              )}
             </div>
             <main className={`flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-transparent`}>
               {children}
