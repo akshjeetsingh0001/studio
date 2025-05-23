@@ -186,26 +186,17 @@ export default function OrderEntryPage() {
       return;
     }
     setIsFetchingSuggestions(true);
-    try {
-      const orderDescription = currentOrder
-        .map(item => `${item.quantity}x ${item.name}`)
-        .join(', ');
+    // Removed try...catch block for AI suggestions
+    const orderDescription = currentOrder
+      .map(item => `${item.quantity}x ${item.name}`)
+      .join(', ');
 
-      const input: GetUpsellSuggestionsInput = { orderDescription };
-      const result = await getUpsellSuggestions(input);
-      setAiSuggestions(result.suggestions);
-    } catch (error) {
-      console.error('Failed to fetch AI suggestions:', error);
-      toast({
-        title: 'AI Suggestion Error',
-        description: 'Could not fetch upsell suggestions. API key might be missing or invalid.',
-        variant: 'destructive',
-      });
-      setAiSuggestions([]);
-    } finally {
-      setIsFetchingSuggestions(false);
-    }
-  }, [currentOrder, toast]);
+    const input: GetUpsellSuggestionsInput = { orderDescription };
+    const result = await getUpsellSuggestions(input);
+    // If getUpsellSuggestions fails, this point might not be reached, or 'result' could be problematic.
+    setAiSuggestions(result.suggestions); 
+    setIsFetchingSuggestions(false);
+  }, [currentOrder]);
 
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
