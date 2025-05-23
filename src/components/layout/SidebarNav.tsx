@@ -33,7 +33,7 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { state, toggleSidebar } = useSidebar();
+  const { state, toggleSidebar, setOpen } = useSidebar(); // Added setOpen for logo click
   const isMobile = useIsMobile();
 
   if (!navItemGroups?.length) {
@@ -50,18 +50,23 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
       variant="sidebar"
     >
       <div className={cn(
-        "flex h-16 items-center px-2",
+        "flex h-16 items-center px-2 border-b border-transparent group-data-[collapsible=icon]:border-b-0",
         // When expanded, push the toggle button to the right. When collapsed, center the toggle button.
-        state === 'expanded' && !isMobile ? "justify-end" : "justify-center"
+        state === 'expanded' && !isMobile ? "justify-start pl-4" : "justify-center"
       )}>
-        {/* This is the desktop toggle button for the sidebar. AppLogo is at the bottom. */}
-        {!isMobile && ( // Only show this for desktop
-          <Button variant="ghost" size="icon" onClick={toggleSidebar} className="h-9 w-9" aria-label="Toggle sidebar">
-            <PanelLeft className="h-5 w-5" />
-          </Button>
+        {!isMobile && (
+          <AppLogo
+            iconSize={state === 'expanded' ? 24 : 28}
+            textSize={state === 'expanded' ? "text-2xl" : "hidden"}
+            onClick={toggleSidebar}
+            className={cn(
+              "py-2",
+              state === 'collapsed' && "py-3"
+            )}
+          />
         )}
       </div>
-      <ScrollArea className="h-[calc(100vh-4rem-6.5rem)]"> {/* Adjusted height for bottom section */}
+      <ScrollArea className="h-[calc(100vh-4rem-4rem)]"> {/* Adjusted height for top & bottom sections */}
         <SidebarMenu className="p-4">
           {navItemGroups.map((group, groupIndex) => (
             <SidebarGroup key={groupIndex} className="p-0 mb-4">
@@ -103,20 +108,11 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
         </SidebarMenu>
       </ScrollArea>
 
-      {/* Bottom Section: AppLogo and actions */}
-      <div className="mt-auto p-2 group-data-[collapsible=icon]:border-t-0">
-        <div className={cn("flex flex-col items-center", state === 'expanded' ? 'items-center' : 'items-center')}>
-          <AppLogo
-            iconSize={state === 'expanded' ? 24 : 28}
-            textSize={state === 'expanded' ? "text-2xl" : "hidden"}
-            onClick={!isMobile ? toggleSidebar : undefined} // Logo itself toggles sidebar on desktop
-            className={cn(
-              "py-2",
-              state === 'collapsed' && !isMobile && "py-3" 
-            )}
-          />
+      {/* Bottom Section: Theme Toggle and Logout */}
+      <div className="mt-auto p-2 border-t border-transparent group-data-[collapsible=icon]:border-t-0">
+        <div className={cn("flex flex-col items-center", state === 'expanded' ? 'items-stretch' : 'items-center')}>
           {state === 'expanded' && !isMobile && (
-            <div className="flex w-full justify-around items-center mt-2 pt-2 border-t border-sidebar-border/20">
+            <div className="flex w-full justify-around items-center py-2">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -151,6 +147,42 @@ export function SidebarNav({ navItemGroups, className }: SidebarNavProps) {
               </Tooltip>
             </div>
           )}
+           {state === 'collapsed' && !isMobile && (
+             <div className="flex flex-col items-center space-y-2 py-2">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                      className="h-8 w-8 hover:bg-sidebar-accent hover:text-sidebar-primary"
+                      aria-label="Toggle theme"
+                    >
+                      {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" align="center">
+                    <p>Toggle Theme</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={logout}
+                      className="h-8 w-8 hover:bg-sidebar-accent hover:text-sidebar-primary"
+                      aria-label="Log out"
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" align="center">
+                    <p>Log Out</p>
+                  </TooltipContent>
+                </Tooltip>
+             </div>
+           )}
         </div>
       </div>
     </Sidebar>
