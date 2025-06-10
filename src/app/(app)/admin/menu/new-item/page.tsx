@@ -2,7 +2,7 @@
 'use client';
 
 import type React from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,7 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Info } from 'lucide-react';
 import Link from 'next/link';
 
 const menuItemSchema = z.object({
@@ -26,34 +26,42 @@ const menuItemSchema = z.object({
   description: z.string().optional(),
   imageUrl: z.string().url({ message: "Please enter a valid image URL." }).optional().or(z.literal('')),
   availability: z.boolean().default(true),
+  // variantsJson is not directly in the form but would be part of sheet data
 });
 
 type MenuItemFormData = z.infer<typeof menuItemSchema>;
 
-const USER_MENU_ITEMS_KEY = 'dineSwiftMenuItems';
-
-const initialMockCategories = [
-    'PIZZAS - CLASSIC',
-    'PIZZAS - SIMPLE',
-    'PIZZAS - PREMIUM',
-    'PIZZAS - SPECIAL',
-    'PIZZAS - SINGLES',
-    'PIZZAS - DOUBLES',
-    'EXTRAS',
-    'SANDWICHES',
-    'PASTA',
-    'FRIES',
-    'BURGERS',
-    'KUHLAD SPECIALS',
-    'SIDES',
-    'DIPS',
-];
+// Fetch categories from API or use a static list if API isn't ready for categories
+const initialMockCategories: string[] = []; // Will be populated by API ideally
 
 
 export default function AddNewMenuItemPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [dynamicCategories, setDynamicCategories] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Fetch distinct categories from menu items API to populate the dropdown
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/menu-items');
+        if (response.ok) {
+          const items: {category: string}[] = await response.json();
+          const distinctCategories = Array.from(new Set(items.map(item => item.category)));
+          setDynamicCategories(distinctCategories.sort((a,b) => a.localeCompare(b)));
+        } else {
+          console.error("Failed to fetch categories for dropdown");
+          setDynamicCategories(initialMockCategories); // Fallback
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+        setDynamicCategories(initialMockCategories); // Fallback
+      }
+    };
+    fetchCategories();
+  }, []);
+
 
   const form = useForm<MenuItemFormData>({
     resolver: zodResolver(menuItemSchema),
@@ -69,46 +77,30 @@ export default function AddNewMenuItemPage() {
 
   const onSubmit = (data: MenuItemFormData) => {
     setIsLoading(true);
+    toast({
+        title: 'Feature Not Implemented',
+        description: (
+          <div>
+            <p>Adding new menu items directly from this UI to Google Sheets is not yet implemented.</p>
+            <p className="mt-2"><strong>Please add new items directly into your Google Sheet.</strong></p>
+            <p className="mt-1">The sheet should have columns: id, name, category, price, imageUrl, availability (TRUE/FALSE), description, dataAiHint, variantsJson.</p>
+          </div>
+        ),
+        variant: 'default', // Using default, could be 'destructive' or a custom variant
+        duration: 10000, // Longer duration for important info
+        icon: <Info className="h-5 w-5 text-blue-500" />
+    });
     
-    const categoryCode = data.category.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4) || 'GNRL';
-    const nameCode = data.name.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3) || 'ITM';
-    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase();
-
-    const newItem = {
-      id: `ITEM_${categoryCode}_${nameCode}_${randomSuffix}`,
-      ...data,
-      imageUrl: data.imageUrl || `https://placehold.co/100x100.png?text=${data.name.substring(0,2)}`, 
-      'data-ai-hint': `${data.category.toLowerCase()} food`,
-      // Note: Adding items with complex variants (like different sizes) is not supported by this form.
-      // That logic currently resides in the initialMockMenuItems definition in the main menu page.
-    };
-
-    try {
-      const existingItemsRaw = localStorage.getItem(USER_MENU_ITEMS_KEY);
-      let existingItems = existingItemsRaw ? JSON.parse(existingItemsRaw) : [];
-      existingItems.push(newItem);
-      localStorage.setItem(USER_MENU_ITEMS_KEY, JSON.stringify(existingItems));
-
-      toast({
-        title: 'Menu Item Added!',
-        description: `${newItem.name} has been successfully added to the menu.`,
-      });
-      router.push('/admin/menu');
-    } catch (error) {
-      console.error("Failed to save menu item to localStorage", error);
-      toast({
-        title: 'Storage Error',
-        description: 'Could not save menu item due to a storage issue.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    // Simulate some work or redirect
+    setTimeout(() => {
+        setIsLoading(false);
+        // router.push('/admin/menu'); // Optionally redirect
+    }, 1000);
   };
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Add New Menu Item" description="Fill in the details for the new menu item.">
+      <PageHeader title="Add New Menu Item" description="Define a new item for your menu. (Currently informational - add to Google Sheets)">
         <Link href="/admin/menu" passHref>
           <Button variant="outline">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -116,12 +108,28 @@ export default function AddNewMenuItemPage() {
           </Button>
         </Link>
       </PageHeader>
+      
+      <Card className="shadow-sm bg-blue-50 border border-blue-200 mb-6">
+        <CardContent className="p-4">
+            <div className="flex items-start">
+                <Info className="h-5 w-5 mr-3 mt-1 flex-shrink-0 text-blue-600" />
+                <div>
+                    <p className="text-sm text-blue-700 font-medium">
+                        Note: This form is for demonstration. To add menu items, please edit your Google Sheet directly.
+                    </p>
+                     <p className="text-xs text-blue-600 mt-1">
+                        Ensure your sheet includes columns: id, name, category, price, imageUrl, availability (TRUE/FALSE), description, dataAiHint, and variantsJson.
+                    </p>
+                </div>
+            </div>
+        </CardContent>
+      </Card>
 
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>Item Details</CardTitle>
-            <CardDescription>Provide information about the menu item.</CardDescription>
+            <CardDescription>Provide information about the menu item. (This will not save to Google Sheets yet)</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -137,9 +145,9 @@ export default function AddNewMenuItemPage() {
                     <SelectValue placeholder="Select a category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {initialMockCategories.sort((a,b) => a.localeCompare(b)).map(cat => (
+                    {dynamicCategories.length > 0 ? dynamicCategories.map(cat => (
                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                    ))}
+                    )) : <SelectItem value="" disabled>Loading categories...</SelectItem>}
                   </SelectContent>
                 </Select>
                 {form.formState.errors.category && <p className="text-sm text-destructive mt-1">{form.formState.errors.category.message}</p>}
@@ -169,7 +177,7 @@ export default function AddNewMenuItemPage() {
                 checked={form.watch('availability')}
                 onCheckedChange={(checked) => form.setValue('availability', checked)}
               />
-              <Label htmlFor="availability">Available for Ordering</Label>
+              <Label htmlFor="availability">Available for Ordering (Set in Google Sheet)</Label>
             </div>
           </CardContent>
           <CardFooter>
@@ -179,7 +187,7 @@ export default function AddNewMenuItemPage() {
               className="transform transition-transform duration-150 ease-in-out hover:scale-105 active:scale-95"
             >
               <Save className="mr-2 h-4 w-4" />
-              {isLoading ? 'Saving...' : 'Save Menu Item'}
+              {isLoading ? 'Processing...' : 'Save Menu Item (Informational)'}
             </Button>
           </CardFooter>
         </Card>

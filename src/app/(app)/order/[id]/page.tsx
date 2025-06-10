@@ -10,7 +10,7 @@ import { Card, CardTitle, CardContent, CardDescription, CardHeader } from '@/com
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import Image from 'next/image';
-import { PlusCircle, MinusCircle, Trash2, ShoppingCart, DollarSign, CreditCard, AlertTriangle } from 'lucide-react';
+import { PlusCircle, MinusCircle, Trash2, ShoppingCart, DollarSign, CreditCard, AlertTriangle, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -38,10 +38,7 @@ export interface OrderItem extends MenuItem {
   quantity: number;
 }
 
-const USER_MENU_ITEMS_KEY = 'dineSwiftMenuItems';
 const USER_SAVED_ORDERS_KEY = 'dineSwiftUserSavedOrders';
-
-const initialMockMenuItemsForFallback: MenuItem[] = []; 
 
 export default function OrderEntryPage() {
   const params = useParams();
@@ -51,6 +48,8 @@ export default function OrderEntryPage() {
   const { user: authUser } = useAuth();
 
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [isLoadingMenuItems, setIsLoadingMenuItems] = useState(true);
+  const [menuLoadError, setMenuLoadError] = useState<string | null>(null);
   const [currentOrder, setCurrentOrder] = useState<OrderItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
 
@@ -58,44 +57,36 @@ export default function OrderEntryPage() {
   const [selectedItemForVariant, setSelectedItemForVariant] = useState<MenuItem | null>(null);
 
   const pageTitle = pageParamId === 'new' ? 'New Order' : `Order for ${pageParamId?.toUpperCase()}`;
-  // const pageDescription = pageParamId === 'new' ? 'Start a new customer order.' : `Manage order for Table/ID: ${pageParamId?.toUpperCase()}`;
   const pageDescription = pageParamId === 'new' ? '' : `Manage order for Table/ID: ${pageParamId?.toUpperCase()}`;
 
-
-  const loadMenuItemsFromStorage = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedItemsRaw = localStorage.getItem(USER_MENU_ITEMS_KEY);
-        if (savedItemsRaw) {
-          const parsedItems = JSON.parse(savedItemsRaw);
-          if (Array.isArray(parsedItems) && parsedItems.length > 0) {
-            setMenuItems(parsedItems.map((item: any) => ({
-              id: item.id || `ITEM_UNKNOWN_${Math.random().toString(36).substr(2, 9)}`,
-              name: item.name || 'Unknown Item',
-              category: item.category || 'Uncategorized',
-              price: typeof item.price === 'number' ? item.price : 0,
-              imageUrl: item.imageUrl || 'https://placehold.co/150x100.png',
-              description: item.description || '',
-              availability: typeof item.availability === 'boolean' ? item.availability : true,
-              'data-ai-hint': item['data-ai-hint'] || `${(item.category || '').toLowerCase()} food`,
-              variants: item.variants || undefined,
-            })));
-            return;
-          }
-        }
-        setMenuItems(initialMockMenuItemsForFallback);
-      } catch (e) {
-        console.error("Failed to load menu items from localStorage for order page", e);
-        setMenuItems(initialMockMenuItemsForFallback);
+  const fetchMenuItems = useCallback(async () => {
+    setIsLoadingMenuItems(true);
+    setMenuLoadError(null);
+    try {
+      const response = await fetch('/api/menu-items');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to fetch menu items: ${response.statusText}`);
       }
-    } else {
-       setMenuItems(initialMockMenuItemsForFallback);
+      const data: MenuItem[] = await response.json();
+      setMenuItems(data);
+    } catch (error) {
+      console.error("Failed to load menu items from API:", error);
+      setMenuLoadError(error instanceof Error ? error.message : "An unknown error occurred while fetching menu items.");
+      setMenuItems([]); // Clear menu items on error
+      toast({
+        title: "Error Loading Menu",
+        description: error instanceof Error ? error.message : "Could not load menu items. Please check configuration or try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingMenuItems(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
-    loadMenuItemsFromStorage();
-  }, [loadMenuItemsFromStorage]);
+    fetchMenuItems();
+  }, [fetchMenuItems]);
 
   const handleItemClick = (item: MenuItem) => {
     if (!item.availability) {
@@ -122,7 +113,7 @@ export default function OrderEntryPage() {
       name: `${baseItem.name} (${variant.size || variant.type})`,
       price: variant.price,
       quantity: 1,
-      variants: undefined,
+      variants: undefined, // Variants are resolved into a single item
     };
     addItemToOrder(orderItem, true);
     setIsVariantDialogOpen(false);
@@ -138,7 +129,7 @@ export default function OrderEntryPage() {
           orderItem.id === itemToAdd.id ? { ...orderItem, quantity: orderItem.quantity + 1 } : orderItem
         );
       }
-      const newItem = itemToAdd as OrderItem;
+      const newItem = itemToAdd as OrderItem; // Cast to OrderItem
       return [...prevOrder, { ...newItem, quantity: newItem.quantity || 1 }];
     });
   };
@@ -205,7 +196,7 @@ export default function OrderEntryPage() {
       status: status,
       server: authUser?.username || 'Staff',
       time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-      orderPlacedTimestamp: Date.now(), // Add precise timestamp
+      orderPlacedTimestamp: Date.now(),
       orderDetails: currentOrder.map(item => ({
         id: item.id,
         name: item.name,
@@ -216,6 +207,8 @@ export default function OrderEntryPage() {
         description: item.description,
         availability: item.availability,
         'data-ai-hint': item['data-ai-hint'],
+        // Explicitly exclude variants from being saved in orderDetails if they were resolved
+        // variants: item.variants 
       })),
     };
 
@@ -266,7 +259,13 @@ export default function OrderEntryPage() {
         const orderToEdit = savedOrders.find((order: any) => order.id.toLowerCase() === pageParamId.toLowerCase() || order.table.toLowerCase() === pageParamId.toLowerCase());
         if (orderToEdit && orderToEdit.orderDetails) {
           const validatedOrderDetails = orderToEdit.orderDetails.map((detail: any) => ({
-            ...detail,
+            ...detail, // Spread all properties from the stored detail
+            id: detail.id || `ITEM_RECOVERED_${Math.random().toString(36).substr(2,9)}`,
+            name: detail.name || "Recovered Item",
+            category: detail.category || "Uncategorized",
+            price: typeof detail.price === 'number' ? detail.price : 0,
+            imageUrl: detail.imageUrl || 'https://placehold.co/150x100.png',
+            availability: typeof detail.availability === 'boolean' ? detail.availability : true,
             quantity: detail.quantity || 1,
           }));
           setCurrentOrder(validatedOrderDetails);
@@ -280,6 +279,7 @@ export default function OrderEntryPage() {
   if (!pageParamId) {
     return (
       <div className="flex h-full items-center justify-center">
+        <Loader2 className="mr-2 h-6 w-6 animate-spin" />
         <p>Loading order details...</p>
       </div>
     );
@@ -357,7 +357,7 @@ export default function OrderEntryPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]"> {/* Adjust height if header changes */}
+    <div className="flex flex-col h-[calc(100vh-4rem)]">
         <PageHeader title={pageTitle} description={pageDescription}>
            <Button variant="outline" size="sm" onClick={() => handleSaveOrder('Active')} disabled={currentOrder.length === 0}>
               <DollarSign className="mr-2 h-4 w-4" />
@@ -386,8 +386,25 @@ export default function OrderEntryPage() {
       <div className="flex flex-col lg:flex-row gap-6 flex-1 overflow-hidden">
         <Card className="lg:w-2/3 flex flex-col shadow-lg">
           <CardContent className="flex-1 overflow-hidden p-0">
-            <ScrollArea className="h-full p-6 pt-0"> {/* Removed pt-4 to make category title align with content */}
-              {categoriesToDisplay.map(catName => {
+            <ScrollArea className="h-full p-6 pt-0">
+             {isLoadingMenuItems && (
+                <div className="flex items-center justify-center h-full">
+                  <Loader2 className="mr-2 h-8 w-8 animate-spin text-primary" />
+                  <p>Loading menu...</p>
+                </div>
+              )}
+              {menuLoadError && !isLoadingMenuItems && (
+                <div className="flex flex-col items-center justify-center h-full text-destructive p-4 text-center">
+                  <AlertTriangle className="h-12 w-12 mb-4" />
+                  <p className="font-semibold text-lg">Failed to Load Menu</p>
+                  <p className="text-sm">{menuLoadError}</p>
+                  <Button onClick={fetchMenuItems} variant="outline" className="mt-4">Try Again</Button>
+                </div>
+              )}
+              {!isLoadingMenuItems && !menuLoadError && menuItems.length === 0 && (
+                 <p className="text-center text-muted-foreground py-8">No items available in the menu. Please add items via Google Sheets.</p>
+              )}
+              {!isLoadingMenuItems && !menuLoadError && menuItems.length > 0 && categoriesToDisplay.map(catName => {
                 const itemsInCategory = filteredMenuItems.filter(item => item.category === catName);
                 if (itemsInCategory.length === 0 && selectedCategory !== 'All' && availableMenuItems.length > 0) return null;
 
@@ -409,7 +426,7 @@ export default function OrderEntryPage() {
                           className="flex flex-col overflow-hidden hover:shadow-md transition-all duration-150 ease-in-out hover:scale-[1.02] active:scale-[0.98] cursor-pointer hover:bg-muted/50"
                           onClick={() => handleItemClick(item)}
                         >
-                          <div className="relative w-full h-32"> {/* Adjusted from h-40 */}
+                          <div className="relative w-full h-32">
                             <Image
                               src={item.imageUrl}
                               alt={item.name}
@@ -418,7 +435,7 @@ export default function OrderEntryPage() {
                               data-ai-hint={item['data-ai-hint'] || `${item.category.toLowerCase()} food`}
                             />
                           </div>
-                          <div className="p-2 flex flex-col flex-grow"> {/* Adjusted from p-3 */}
+                          <div className="p-2 flex flex-col flex-grow">
                             <div className="flex-grow mb-1">
                               <CardTitle className="text-base font-semibold mb-0.5">{item.name}</CardTitle>
                               <p className="text-sm font-bold text-primary">{getDisplayPrice(item)}</p>
@@ -430,11 +447,8 @@ export default function OrderEntryPage() {
                   </div>
                 );
               })}
-              {filteredMenuItems.length === 0 && selectedCategory !== 'All' && availableMenuItems.length > 0 && (
+              {!isLoadingMenuItems && !menuLoadError && menuItems.length > 0 && filteredMenuItems.length === 0 && selectedCategory !== 'All' && (
                 <p className="text-center text-muted-foreground py-8">No available menu items match your criteria.</p>
-              )}
-               {availableMenuItems.length === 0 && (
-                 <p className="text-center text-muted-foreground py-8">No items available in the menu. Please add items via Menu Management.</p>
               )}
             </ScrollArea>
           </CardContent>

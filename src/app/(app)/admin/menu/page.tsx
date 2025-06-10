@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Edit, PlusCircle, Search, Trash2, CheckCircle, XCircle } from 'lucide-react';
+import { Edit, PlusCircle, Search, Trash2, CheckCircle, XCircle, Info, Loader2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
@@ -27,10 +27,10 @@ import {
 } from "@/components/ui/alert-dialog"; 
 
 interface MenuItemVariant {
-  size?: string; // For pizzas: 'Small', 'Medium', 'Large'
-  type?: string; // For pasta: 'Red', 'White', 'Combi'
+  size?: string;
+  type?: string;
   price: number;
-  idSuffix: string; // e.g., '_S', '_M', '_L', '_RED'
+  idSuffix: string;
 }
 
 interface MenuItem {
@@ -57,177 +57,12 @@ interface ModifierGroup {
   items: string[];
 }
 
-const USER_MENU_ITEMS_KEY = 'dineSwiftMenuItems';
-
-const initialMockMenuItems: MenuItem[] = [
-  // Pizzas - CLASSIC
-  {
-    id: 'PIZZA_CLASSIC_MARG', name: 'Margherita', category: 'PIZZAS - CLASSIC', price: 100, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=M', description: 'Classic Margherita Pizza.', 'data-ai-hint': 'pizza food',
-    variants: [
-      { size: 'Small', price: 100, idSuffix: '_S' }, { size: 'Medium', price: 200, idSuffix: '_M' }, { size: 'Large', price: 300, idSuffix: '_L' },
-    ]
-  },
-  {
-    id: 'PIZZA_CLASSIC_CT', name: 'Cheese Tomato Pizza', category: 'PIZZAS - CLASSIC', price: 100, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=CTP', description: 'Cheese Tomato Pizza.', 'data-ai-hint': 'pizza food',
-    variants: [
-      { size: 'Small', price: 100, idSuffix: '_S' }, { size: 'Medium', price: 200, idSuffix: '_M' }, { size: 'Large', price: 300, idSuffix: '_L' },
-    ]
-  },
-
-  // Pizzas - SIMPLE
-  {
-    id: 'PIZZA_SIMPLE_DCM', name: 'Double Cheese Margherita', category: 'PIZZAS - SIMPLE', price: 150, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=DCM', description: 'Double Cheese Margherita.', 'data-ai-hint': 'pizza food',
-    variants: [
-      { size: 'Small', price: 150, idSuffix: '_S' }, { size: 'Medium', price: 290, idSuffix: '_M' }, { size: 'Large', price: 450, idSuffix: '_L' },
-    ]
-  },
-  {
-    id: 'PIZZA_SIMPLE_SV', name: 'Simple Veg Pizza', category: 'PIZZAS - SIMPLE', price: 150, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=SV', description: 'Simple Veg Pizza.', 'data-ai-hint': 'pizza food',
-    variants: [
-      { size: 'Small', price: 150, idSuffix: '_S' }, { size: 'Medium', price: 290, idSuffix: '_M' }, { size: 'Large', price: 450, idSuffix: '_L' },
-    ]
-  },
-  {
-    id: 'PIZZA_SIMPLE_JC', name: 'Just Corn Pizza', category: 'PIZZAS - SIMPLE', price: 150, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=JC', description: 'Just Corn Pizza.', 'data-ai-hint': 'pizza food',
-    variants: [
-      { size: 'Small', price: 150, idSuffix: '_S' }, { size: 'Medium', price: 290, idSuffix: '_M' }, { size: 'Large', price: 450, idSuffix: '_L' },
-    ]
-  },
-  {
-    id: 'PIZZA_SIMPLE_FL', name: 'Farm Lover Pizza', category: 'PIZZAS - SIMPLE', price: 150, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=FL', description: 'Farm Lover Pizza.', 'data-ai-hint': 'pizza food',
-    variants: [
-      { size: 'Small', price: 150, idSuffix: '_S' }, { size: 'Medium', price: 290, idSuffix: '_M' }, { size: 'Large', price: 450, idSuffix: '_L' },
-    ]
-  },
-  {
-    id: 'PIZZA_SIMPLE_SP', name: 'Spicy Paneer Pizza', category: 'PIZZAS - SIMPLE', price: 150, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=SPP', description: 'Spicy Paneer Pizza.', 'data-ai-hint': 'pizza food',
-    variants: [
-      { size: 'Small', price: 150, idSuffix: '_S' }, { size: 'Medium', price: 290, idSuffix: '_M' }, { size: 'Large', price: 450, idSuffix: '_L' },
-    ]
-  },
-  {
-    id: 'PIZZA_SIMPLE_TM', name: 'Tasty Mexicana Pizza', category: 'PIZZAS - SIMPLE', price: 150, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=TMP', description: 'Tasty Mexicana Pizza.', 'data-ai-hint': 'pizza food',
-    variants: [
-      { size: 'Small', price: 150, idSuffix: '_S' }, { size: 'Medium', price: 290, idSuffix: '_M' }, { size: 'Large', price: 450, idSuffix: '_L' },
-    ]
-  },
-  {
-    id: 'PIZZA_SIMPLE_BW', name: 'Black & White Pizza', category: 'PIZZAS - SIMPLE', price: 150, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=BWP', description: 'Black & White Pizza.', 'data-ai-hint': 'pizza food',
-    variants: [
-      { size: 'Small', price: 150, idSuffix: '_S' }, { size: 'Medium', price: 290, idSuffix: '_M' }, { size: 'Large', price: 450, idSuffix: '_L' },
-    ]
-  },
-
-  // Pizzas - PREMIUM
-  {
-    id: 'PIZZA_PREMIUM_PH', name: 'Paneer Hub', category: 'PIZZAS - PREMIUM', price: 200, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=PH', description: 'Paneer Hub Pizza.', 'data-ai-hint': 'pizza food',
-    variants: [
-      { size: 'Small', price: 200, idSuffix: '_S' }, { size: 'Medium', price: 370, idSuffix: '_M' }, { size: 'Large', price: 550, idSuffix: '_L' },
-    ]
-  },
-  {
-    id: 'PIZZA_PREMIUM_OLIVY', name: 'Olivy Pizza', category: 'PIZZAS - PREMIUM', price: 200, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=OP', description: 'Olivy Pizza.', 'data-ai-hint': 'pizza food',
-    variants: [
-      { size: 'Small', price: 200, idSuffix: '_S' }, { size: 'Medium', price: 370, idSuffix: '_M' }, { size: 'Large', price: 550, idSuffix: '_L' },
-    ]
-  },
-  {
-    id: 'PIZZA_PREMIUM_PMIX', name: 'Premium Mix Pizza', category: 'PIZZAS - PREMIUM', price: 200, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=PMP', description: 'Premium Mix Pizza.', 'data-ai-hint': 'pizza food',
-    variants: [
-      { size: 'Small', price: 200, idSuffix: '_S' }, { size: 'Medium', price: 370, idSuffix: '_M' }, { size: 'Large', price: 550, idSuffix: '_L' },
-    ]
-  },
-
-  // Pizzas - Delight Hub SPECIAL
-  {
-    id: 'PIZZA_SPECIAL_DHS', name: 'Delight Hub Special', category: 'PIZZAS - SPECIAL', price: 230, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=DHS', description: 'Delight Hub Special Pizza.', 'data-ai-hint': 'pizza food',
-    variants: [
-      { size: 'Small', price: 230, idSuffix: '_S' }, { size: 'Medium', price: 460, idSuffix: '_M' }, { size: 'Large', price: 650, idSuffix: '_L' },
-    ]
-  },
-  
-  // EXTRAS
-  { id: 'EXTRA_CHEESE', name: 'Cheese-Topping', category: 'EXTRAS', price: 40, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=CT', description: 'Extra cheese topping.', 'data-ai-hint': 'cheese topping' },
-  { id: 'EXTRA_TOPPING', name: 'Extra Topping', category: 'EXTRAS', price: 30, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=ET', description: 'Additional topping.', 'data-ai-hint': 'vegetable topping' },
-
-  // SINGLES
-  { id: 'PIZZA_SINGLE_ONION', name: 'Onion Single Pizza', category: 'PIZZAS - SINGLES', price: 60, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=OS', description: 'Single topping pizza with onion.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_SINGLE_CAP', name: 'Capsicum Single Pizza', category: 'PIZZAS - SINGLES', price: 70, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=CS', description: 'Single topping pizza with capsicum.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_SINGLE_TOM', name: 'Tomato Single Pizza', category: 'PIZZAS - SINGLES', price: 70, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=TS', description: 'Single topping pizza with tomato.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_SINGLE_CORN', name: 'Corn Single Pizza', category: 'PIZZAS - SINGLES', price: 70, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=CrS', description: 'Single topping pizza with corn.', 'data-ai-hint': 'pizza food' },
-
-  // DOUBLES
-  { id: 'PIZZA_DOUBLE_OC', name: 'Onion Capsicum Double Pizza', category: 'PIZZAS - DOUBLES', price: 70, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=OCD', description: 'Double topping pizza with onion and capsicum.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_DOUBLE_PC', name: 'Paneer Capsicum Double Pizza', category: 'PIZZAS - DOUBLES', price: 80, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=PCD', description: 'Double topping pizza with paneer and capsicum.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_DOUBLE_PO', name: 'Paneer Onion Double Pizza', category: 'PIZZAS - DOUBLES', price: 80, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=POD', description: 'Double topping pizza with paneer and onion.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_DOUBLE_OJ', name: 'Onion Jalapeno Double Pizza', category: 'PIZZAS - DOUBLES', price: 80, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=OJD', description: 'Double topping pizza with onion and jalapeno.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_DOUBLE_TC', name: 'Tomato Corn Double Pizza', category: 'PIZZAS - DOUBLES', price: 80, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=TCD', description: 'Double topping pizza with tomato and corn.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_DOUBLE_PCO', name: 'Paneer Corn Double Pizza', category: 'PIZZAS - DOUBLES', price: 80, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=PCO', description: 'Double topping pizza with paneer and corn.', 'data-ai-hint': 'pizza food' },
-  { id: 'PIZZA_DOUBLE_POC', name: 'Paneer-O-C Double Pizza', category: 'PIZZAS - DOUBLES', price: 100, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=POCD', description: 'Paneer, Onion, Capsicum Double Pizza.', 'data-ai-hint': 'pizza food' },
-
-  // SANDWICHES
-  { id: 'SAND_CLASSIC', name: 'Classic Green Sandwich', category: 'SANDWICHES', price: 60, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=CGS', description: 'A classic green sandwich.', 'data-ai-hint': 'sandwich food' },
-  { id: 'SAND_CHEESY', name: 'Cheesy Sandwich', category: 'SANDWICHES', price: 70, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=CHS', description: 'A delicious cheesy sandwich.', 'data-ai-hint': 'sandwich food' },
-  { id: 'SAND_PANEERCORN', name: 'Paneer Corn Sandwich', category: 'SANDWICHES', price: 80, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=PCS', description: 'Paneer and corn sandwich.', 'data-ai-hint': 'sandwich food' },
-  { id: 'SAND_PANEERTIKKA', name: 'Paneer Tikka Sandwich', category: 'SANDWICHES', price: 100, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=PTS', description: 'Spicy paneer tikka sandwich.', 'data-ai-hint': 'sandwich food' },
-
-  // PASTA
-  { 
-    id: 'PASTA_REGULAR', name: 'Regular Pasta', category: 'PASTA', price: 80, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=RP', description: 'Regular pasta.', 'data-ai-hint': 'pasta food',
-    variants: [
-      { type: 'Red Sauce', price: 80, idSuffix: '_RED' }, { type: 'White Sauce', price: 80, idSuffix: '_WHITE' }, { type: 'Combi Sauce', price: 100, idSuffix: '_COMBI' },
-    ]
-  },
-  { 
-    id: 'PASTA_TANDOORI', name: 'Tandoori Pasta', category: 'PASTA', price: 80, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=TP', description: 'Tandoori pasta.', 'data-ai-hint': 'pasta food',
-    variants: [
-      { type: 'Red Sauce', price: 80, idSuffix: '_RED' }, { type: 'White Sauce', price: 80, idSuffix: '_WHITE' }, { type: 'Combi Sauce', price: 100, idSuffix: '_COMBI' },
-    ]
-  },
-
-  // FRIES
-  { id: 'FRIES_PERI', name: 'Peri Peri Fries', category: 'FRIES', price: 70, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=PPF', description: 'Spicy Peri Peri fries.', 'data-ai-hint': 'fries food' },
-  { id: 'FRIES_CHEESE', name: 'Cheese Fries', category: 'FRIES', price: 80, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=CF', description: 'Fries topped with cheese.', 'data-ai-hint': 'fries food' },
-  { id: 'FRIES_PIZZA', name: 'Pizza Style Fries', category: 'FRIES', price: 100, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=PSF', description: 'Fries with pizza style toppings.', 'data-ai-hint': 'fries food' },
-
-  // BURGERS
-  { id: 'BURGER_ALOO', name: 'Aloo Burger', category: 'BURGERS', price: 35, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=AB', description: 'Simple aloo patty burger.', 'data-ai-hint': 'burger food' },
-  { id: 'BURGER_VEGCHEESE', name: 'Veg. Cheese Burger', category: 'BURGERS', price: 50, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=VCB', description: 'Vegetable burger with cheese.', 'data-ai-hint': 'burger food' },
-  { id: 'BURGER_SPICYALOO', name: 'Spicy Aloo Burger', category: 'BURGERS', price: 50, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=SAB', description: 'Spicy aloo patty burger.', 'data-ai-hint': 'burger food' },
-  { id: 'BURGER_JALAPENO', name: 'Jalapeno Burger', category: 'BURGERS', price: 60, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=JB', description: 'Burger with jalapenos.', 'data-ai-hint': 'burger food' },
-  { id: 'BURGER_PANEERTIKKA', name: 'Paneer Tikka Burger', category: 'BURGERS', price: 75, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=PTB', description: 'Paneer tikka patty burger.', 'data-ai-hint': 'burger food' },
-  { id: 'BURGER_DOUBLEDECKER', name: 'Double Decker Burger', category: 'BURGERS', price: 100, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=DDB', description: 'A double decker burger.', 'data-ai-hint': 'burger food' },
-
-  // KUHLAD SPECIALS
-  { 
-    id: 'KUHLAD_PIZZA', name: 'Kuhlad Pizza', category: 'KUHLAD SPECIALS', price: 100, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=KP', description: 'Pizza served in a kuhlad.', 'data-ai-hint': 'pizza food',
-    variants: [
-        { size: 'Regular', price: 100, idSuffix: '_REG' }, { size: 'Large', price: 140, idSuffix: '_LRG' }
-    ]
-  },
-  { id: 'KUHLAD_CHEESEFRIES', name: 'Kuhlad Cheese Fries', category: 'KUHLAD SPECIALS', price: 120, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=KCF', description: 'Cheese fries served in a kuhlad.', 'data-ai-hint': 'fries food' },
-  { id: 'KUHLAD_PASTA', name: 'Kuhlad Pasta', category: 'KUHLAD SPECIALS', price: 120, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=KPS', description: 'Pasta served in a kuhlad.', 'data-ai-hint': 'pasta food' },
-
-  // SIDES
-  { id: 'SIDE_VEGPOCKET', name: 'Veg. Pocket', category: 'SIDES', price: 40, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=VP', description: 'Vegetable pocket.', 'data-ai-hint': 'snack food' },
-  { id: 'SIDE_GARLICBREAD', name: 'Garlic Bread', category: 'SIDES', price: 60, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=GB', description: 'Classic garlic bread.', 'data-ai-hint': 'bread food' },
-  { id: 'SIDE_GARLICBREADCHEESE', name: 'Garlic Bread Cheese', category: 'SIDES', price: 100, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=GBC', description: 'Garlic bread with cheese.', 'data-ai-hint': 'bread food' },
-  { id: 'SIDE_CHEESEFILLEDGB', name: 'Cheese Filled Garlic Bread', category: 'SIDES', price: 120, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=CFGB', description: 'Garlic bread filled with cheese.', 'data-ai-hint': 'bread food' },
-
-  // DIPS
-  { id: 'DIP_CHEESY', name: 'Cheesy Dip', category: 'DIPS', price: 30, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=CD', description: 'A creamy cheesy dip.', 'data-ai-hint': 'dip sauce' },
-  { id: 'DIP_THOUSANDISLAND', name: 'Thousand Island Dip', category: 'DIPS', price: 30, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=TID', description: 'Thousand Island dressing dip.', 'data-ai-hint': 'dip sauce' },
-  { id: 'DIP_PERIPERI', name: 'Peri Peri Dip', category: 'DIPS', price: 30, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=PPD', description: 'Spicy Peri Peri dip.', 'data-ai-hint': 'dip sauce' },
-  { id: 'DIP_TANDOORI', name: 'Tandoori Dip', category: 'DIPS', price: 30, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=TD', description: 'Flavorful Tandoori dip.', 'data-ai-hint': 'dip sauce' },
-  { id: 'DIP_MAYO', name: 'Mayo Dip', category: 'DIPS', price: 30, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=MD', description: 'Classic mayonnaise dip.', 'data-ai-hint': 'dip sauce' },
-  { id: 'DIP_CHILLYGARLIC', name: 'Chilly Garlic Dip', category: 'DIPS', price: 30, availability: true, imageUrl: 'https://placehold.co/100x100.png?text=CGD', description: 'Spicy chilly garlic dip.', 'data-ai-hint': 'dip sauce' },
-];
-
 const initialMockModifiers: ModifierGroup[] = [];
-
 
 export default function MenuManagementPage() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [isLoadingMenuItems, setIsLoadingMenuItems] = useState(true);
+  const [menuLoadError, setMenuLoadError] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [modifiers, setModifiers] = useState<ModifierGroup[]>(initialMockModifiers);
   const [searchTerm, setSearchTerm] = useState('');
@@ -235,41 +70,34 @@ export default function MenuManagementPage() {
   const [itemToDeleteId, setItemToDeleteId] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const updateLocalStorage = (updatedItems: MenuItem[]) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(USER_MENU_ITEMS_KEY, JSON.stringify(updatedItems));
-    }
-  };
-  
-  const loadMenuItems = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedItemsRaw = localStorage.getItem(USER_MENU_ITEMS_KEY);
-        if (savedItemsRaw) {
-          const parsedItems = JSON.parse(savedItemsRaw);
-           if (Array.isArray(parsedItems) && parsedItems.length > 0 && parsedItems.every(item => typeof item.id === 'string' && typeof item.name === 'string')) {
-            setMenuItems(parsedItems); 
-          } else {
-            setMenuItems(initialMockMenuItems);
-            updateLocalStorage(initialMockMenuItems); 
-          }
-        } else {
-          setMenuItems(initialMockMenuItems);
-          updateLocalStorage(initialMockMenuItems); 
-        }
-      } catch (e) {
-        console.error("Failed to load menu items from localStorage", e);
-        setMenuItems(initialMockMenuItems); 
-        updateLocalStorage(initialMockMenuItems); 
+  const fetchMenuItems = useCallback(async () => {
+    setIsLoadingMenuItems(true);
+    setMenuLoadError(null);
+    try {
+      const response = await fetch('/api/menu-items');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Failed to fetch menu items: ${response.statusText}`);
       }
-    } else {
-        setMenuItems(initialMockMenuItems); 
+      const data: MenuItem[] = await response.json();
+      setMenuItems(data);
+    } catch (error) {
+      console.error("Failed to load menu items from API:", error);
+      setMenuLoadError(error instanceof Error ? error.message : "An unknown error occurred while fetching menu items.");
+      setMenuItems([]);
+      toast({
+        title: "Error Loading Menu",
+        description: error instanceof Error ? error.message : "Could not load menu items. Please check Google Sheets configuration or try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoadingMenuItems(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
-    loadMenuItems();
-  }, [loadMenuItems]);
+    fetchMenuItems();
+  }, [fetchMenuItems]);
 
   useEffect(() => {
     const categoryMap = new Map<string, number>();
@@ -286,53 +114,21 @@ export default function MenuManagementPage() {
 
 
   const handleToggleAvailability = (itemId: string) => {
-    let changedItemName = '';
-    let newAvailability = false;
-    
-    setMenuItems(prevItems => {
-      const updatedItems = prevItems.map(item => {
-        if (item.id === itemId) {
-          newAvailability = !item.availability;
-          changedItemName = item.name;
-          return { ...item, availability: newAvailability };
-        }
-        return item;
-      });
-      updateLocalStorage(updatedItems);
-      return updatedItems;
+    toast({
+      title: "Feature Not Implemented",
+      description: "Changing item availability requires Google Sheets write access, which is not yet implemented in this UI. Please update directly in your Google Sheet.",
+      variant: "default",
+      icon: <Info className="h-5 w-5 text-blue-500" />,
     });
-    
-    if (changedItemName) {
-      toast({
-        title: `Availability Updated`,
-        description: `${changedItemName} is now ${newAvailability ? 'available' : 'unavailable'}.`,
-        icon: newAvailability ? <CheckCircle className="h-5 w-5 text-green-500" /> : <XCircle className="h-5 w-5 text-red-500" />,
-      });
-    }
   };
 
   const confirmDeleteItem = () => {
-    if (itemToDeleteId) {
-      let deletedItemName = '';
-      setMenuItems(prevItems => {
-        const itemToDelete = prevItems.find(item => item.id === itemToDeleteId);
-        if (itemToDelete) {
-          deletedItemName = itemToDelete.name;
-        }
-        const updatedItems = prevItems.filter(item => item.id !== itemToDeleteId);
-        updateLocalStorage(updatedItems);
-        return updatedItems;
-      });
-
-      if (deletedItemName) {
-        toast({
-          title: "Item Deleted",
-          description: `${deletedItemName} has been removed from the menu.`,
-          variant: "destructive",
-          icon: <Trash2 className="h-5 w-5" />,
-        });
-      }
-    }
+     toast({
+      title: "Feature Not Implemented",
+      description: "Deleting items requires Google Sheets write access, which is not yet implemented in this UI. Please update directly in your Google Sheet.",
+      variant: "default",
+      icon: <Info className="h-5 w-5 text-blue-500" />,
+    });
     setItemToDeleteId(null);
     setIsDeleteDialogOpen(false);
   };
@@ -342,18 +138,17 @@ export default function MenuManagementPage() {
     setIsDeleteDialogOpen(true);
   };
 
-
   const handleAddCategory = () => {
     toast({
       title: "Add Category",
-      description: "This feature is coming soon! You'll be able to add new categories here.",
+      description: "Managing categories directly requires Google Sheets write access, which is not yet implemented. Categories are derived from your items in Google Sheets.",
     });
   };
 
   const handleAddModifierGroup = () => {
     toast({
       title: "Add Modifier Group",
-      description: "This feature is coming soon! You'll be able to add new modifier groups here.",
+      description: "This feature is coming soon! You'll be able to add new modifier groups here (requires backend integration).",
     });
   };
   
@@ -375,11 +170,10 @@ export default function MenuManagementPage() {
     return `₹${item.price.toFixed(2)}`;
   };
 
-
   return (
     <>
     <div className="space-y-6">
-      <PageHeader title="Menu Management" description="Add, edit, and organize your menu items, categories, and modifiers.">
+      <PageHeader title="Menu Management" description="View your menu items. Menu data is read from Google Sheets.">
         <div className="flex items-center gap-2">
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -398,11 +192,26 @@ export default function MenuManagementPage() {
           </Link>
         </div>
       </PageHeader>
+      
+      <Card className="shadow-sm bg-blue-50 border border-blue-200">
+        <CardContent className="p-4">
+            <div className="flex items-start">
+                <Info className="h-5 w-5 mr-3 mt-1 flex-shrink-0 text-blue-600" />
+                <div>
+                    <p className="text-sm text-blue-700">
+                        Menu items are now read from your configured Google Sheet. To add, edit, or delete items, please make changes directly in the Google Sheet.
+                        Write operations from this interface (like 'Add New Item', 'Edit', 'Delete', or toggling availability) are not currently implemented for Google Sheets.
+                    </p>
+                </div>
+            </div>
+        </CardContent>
+      </Card>
+
 
       <Tabs defaultValue="items">
         <TabsList className="grid w-full grid-cols-3 md:w-[500px]">
-          <TabsTrigger value="items">All Items ({filteredMenuItems.length})</TabsTrigger>
-          <TabsTrigger value="categories">Categories ({categories.length})</TabsTrigger>
+          <TabsTrigger value="items">All Items ({isLoadingMenuItems ? '...' : filteredMenuItems.length})</TabsTrigger>
+          <TabsTrigger value="categories">Categories ({isLoadingMenuItems ? '...' : categories.length})</TabsTrigger>
           <TabsTrigger value="modifiers">Modifiers ({modifiers.length})</TabsTrigger>
         </TabsList>
 
@@ -410,66 +219,90 @@ export default function MenuManagementPage() {
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle>Menu Items</CardTitle>
-              <CardDescription>Manage all individual items on your menu. Note: Adding items with variants (e.g., Pizza sizes) is not yet supported via the 'Add New Item' form.</CardDescription>
+              <CardDescription>Manage all individual items on your menu. (Read-only from Google Sheets)</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[80px]">Image</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead className="text-right">Price</TableHead>
-                    <TableHead className="text-center">Availability</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredMenuItems.map((item) => (
-                    <TableRow key={item.id} className="hover:bg-muted/50">
-                      <TableCell>
-                        <div className="relative h-12 w-12 rounded-md overflow-hidden border">
-                           <Image 
-                            src={item.imageUrl || `https://placehold.co/100x100.png?text=${item.name.substring(0,2)}`} 
-                            alt={item.name} 
-                            layout="fill" 
-                            objectFit="cover" 
-                            data-ai-hint={item['data-ai-hint'] || `${item.category.toLowerCase()} food`} />
-                        </div>
-                      </TableCell>
-                      <TableCell className="font-medium">{item.name}</TableCell>
-                      <TableCell>{item.category}</TableCell>
-                      <TableCell className="text-right">{getPriceDisplay(item)}</TableCell>
-                      <TableCell className="text-center">
-                        <Switch
-                          checked={item.availability}
-                          onCheckedChange={() => handleToggleAvailability(item.id)}
-                          id={`avail-${item.id}`}
-                          aria-label={`${item.name} availability`}
-                        />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" title="Edit Item" disabled> 
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          title="Delete Item" 
-                          className="text-destructive hover:text-destructive/80" 
-                          onClick={() => openDeleteDialog(item.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-               {filteredMenuItems.length === 0 && (
-                <p className="text-center text-muted-foreground py-8">
-                  {menuItems.length === 0 ? "No menu items available. Try adding some!" : searchTerm ? "No items match your search." : "All items might be filtered out or unavailable."}
-                </p>
+              {isLoadingMenuItems && (
+                <div className="flex items-center justify-center h-64">
+                  <Loader2 className="mr-2 h-8 w-8 animate-spin text-primary" />
+                  <p>Loading menu from Google Sheets...</p>
+                </div>
+              )}
+              {menuLoadError && !isLoadingMenuItems && (
+                <div className="flex flex-col items-center justify-center h-64 text-destructive p-4 text-center">
+                  <AlertTriangle className="h-12 w-12 mb-4" />
+                  <p className="font-semibold text-lg">Failed to Load Menu</p>
+                  <p className="text-sm">{menuLoadError}</p>
+                  <Button onClick={fetchMenuItems} variant="outline" className="mt-4">Try Again</Button>
+                </div>
+              )}
+              {!isLoadingMenuItems && !menuLoadError && (
+                <>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[80px]">Image</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead className="text-right">Price</TableHead>
+                        <TableHead className="text-center">Availability</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredMenuItems.map((item) => (
+                        <TableRow key={item.id} className="hover:bg-muted/50">
+                          <TableCell>
+                            <div className="relative h-12 w-12 rounded-md overflow-hidden border">
+                               <Image 
+                                src={item.imageUrl || `https://placehold.co/100x100.png?text=${item.name.substring(0,2)}`} 
+                                alt={item.name} 
+                                layout="fill" 
+                                objectFit="cover" 
+                                data-ai-hint={item['data-ai-hint'] || `${item.category.toLowerCase()} food`} />
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-medium">{item.name}</TableCell>
+                          <TableCell>{item.category}</TableCell>
+                          <TableCell className="text-right">{getPriceDisplay(item)}</TableCell>
+                          <TableCell className="text-center">
+                            <Switch
+                              checked={item.availability}
+                              onCheckedChange={() => handleToggleAvailability(item.id)}
+                              id={`avail-${item.id}`}
+                              aria-label={`${item.name} availability (read-only)`}
+                              disabled // Availability is now managed in Google Sheets
+                            />
+                             <Badge variant={item.availability ? "default" : "outline"} className={`ml-2 ${item.availability ? 'bg-green-100 text-green-700 border-green-300' : 'bg-red-100 text-red-700 border-red-300'}`}>
+                                {item.availability ? <CheckCircle className="mr-1 h-3 w-3" /> : <XCircle className="mr-1 h-3 w-3" />}
+                                {item.availability ? 'Available' : 'Unavailable'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="ghost" size="icon" title="Edit Item (Manage in Google Sheets)" disabled> 
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              title="Delete Item (Manage in Google Sheets)" 
+                              className="text-destructive hover:text-destructive/80" 
+                              onClick={() => openDeleteDialog(item.id)}
+                              // disabled // Re-enable if openDeleteDialog is to show info toast
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  {filteredMenuItems.length === 0 && (
+                    <p className="text-center text-muted-foreground py-8">
+                      {menuItems.length === 0 ? "No menu items found in Google Sheets." : searchTerm ? "No items match your search." : "All items might be filtered out."}
+                    </p>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
@@ -480,14 +313,16 @@ export default function MenuManagementPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Categories</CardTitle>
-                <CardDescription>Organize your menu items into categories.</CardDescription>
+                <CardDescription>Categories are derived from items in your Google Sheet.</CardDescription>
               </div>
-              <Button variant="outline" onClick={handleAddCategory}>
+              <Button variant="outline" onClick={handleAddCategory} disabled>
                 <PlusCircle className="mr-2 h-4 w-4" /> Add Category
               </Button>
             </CardHeader>
             <CardContent>
-              {categories.length > 0 ? (
+              {isLoadingMenuItems ? (
+                 <div className="flex items-center justify-center h-32"><Loader2 className="mr-2 h-6 w-6 animate-spin text-primary" /><p>Loading categories...</p></div>
+              ) : categories.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -502,10 +337,10 @@ export default function MenuManagementPage() {
                         <TableCell className="font-medium">{category.name}</TableCell>
                         <TableCell className="text-center">{category.itemCount}</TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" title="Edit Category" disabled>
+                          <Button variant="ghost" size="icon" title="Edit Category (Manage in Google Sheets)" disabled>
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" title="Delete Category" className="text-destructive hover:text-destructive/80" disabled>
+                          <Button variant="ghost" size="icon" title="Delete Category (Manage in Google Sheets)" className="text-destructive hover:text-destructive/80" disabled>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </TableCell>
@@ -514,7 +349,7 @@ export default function MenuManagementPage() {
                   </TableBody>
                 </Table>
               ) : (
-                 <p className="text-center text-muted-foreground py-8">No categories found. Add menu items to see categories here.</p>
+                 <p className="text-center text-muted-foreground py-8">No categories found. Add menu items to your Google Sheet to see categories here.</p>
               )}
             </CardContent>
           </Card>
@@ -525,9 +360,9 @@ export default function MenuManagementPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Modifiers</CardTitle>
-                <CardDescription>Manage item add-ons and customization options.</CardDescription>
+                <CardDescription>Manage item add-ons and customization options (Not yet integrated with Google Sheets).</CardDescription>
               </div>
-               <Button variant="outline" onClick={handleAddModifierGroup}>
+               <Button variant="outline" onClick={handleAddModifierGroup} disabled>
                 <PlusCircle className="mr-2 h-4 w-4" /> Add Modifier Group
               </Button>
             </CardHeader>
@@ -571,19 +406,17 @@ export default function MenuManagementPage() {
     <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Confirm Action</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the menu item.
+              Deleting items must be done directly in your Google Sheet. This UI action is for confirmation only and will not modify the sheet.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteItem}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDeleteItem}>Understood, Remind Later</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>
   );
 }
-
-    
