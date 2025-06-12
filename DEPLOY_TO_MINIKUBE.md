@@ -53,7 +53,7 @@ This guide provides step-by-step instructions to deploy the Seera POS Next.js ap
         ```bash
         # Example using jq to minify and then base64 encode
         # cat /path/to/your/service-account-file.json | jq -c . | base64 -w 0
-        # OR, if already minified:
+        # OR, if already minified and on a single line:
         cat /path/to/your/service-account-file.json | base64 -w 0
         ```
         *(Note: The `-w 0` flag for GNU `base64` prevents line wrapping. For macOS `base64`, it's just `base64` without `-w 0`.)*
