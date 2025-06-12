@@ -29,11 +29,7 @@ spec:
           value: "production"
         - name: PORT
           value: "3000"
-        - name: AI_PROVIDER_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: seera-pos-secrets
-              key: AI_PROVIDER_API_KEY
+        # AI_PROVIDER_API_KEY is no longer sourced from the secret here
         - name: GOOGLE_SHEET_ID
           # You can put your Google Sheet ID directly here or use a ConfigMap
           value: "YOUR_GOOGLE_SHEET_ID_HERE" # <<< REPLACE THIS
