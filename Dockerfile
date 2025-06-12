@@ -1,36 +1,30 @@
-
 # Stage 1: Installer/Builder - Install dependencies and build the application
 FROM node:20-alpine AS installer
 WORKDIR /app
 
-# Set environment variables for production
+# Set NODE_ENV to production for this stage to ensure only prod dependencies are considered by some tools
+# and to align with the build environment.
 ENV NODE_ENV=production
-# ENV NEXT_TELEMETRY_DISABLED=1 # Uncomment to disable Next.js telemetry
 
-# Explicitly copy tsconfig.json first
+# Copy tsconfig.json first, as it's needed for path aliases during build
 COPY tsconfig.json ./
 
 # Copy package.json and lock files
-# Adjust if you use npm (package-lock.json) or pnpm (pnpm-lock.yaml)
-COPY package.json yarn.lock* ./
-# COPY package.json package-lock.json* ./
-# COPY package.json pnpm-lock.yaml* ./
+COPY package.json yarn.lock* pnpm-lock.yaml* ./
 
-# Install dependencies
-# Make sure to use the correct command for your package manager (npm, yarn, or pnpm)
-RUN yarn install --frozen-lockfile
-# RUN npm ci
-# RUN pnpm install --frozen-lockfile
+# Install dependencies using Yarn (adjust if using npm or pnpm)
+RUN yarn install --frozen-lockfile --network-timeout 100000
 
 # Copy the rest of the application source code
+# This includes the 'src' directory, 'public', 'next.config.ts', etc.
 COPY . .
 
-# Add ls commands for diagnostics - check if files are where they should be
-RUN echo "--- Contents of /app (root) ---" && ls -la /app
-RUN echo "--- Contents of /app/src ---" && ls -la /app/src
-RUN echo "--- Contents of /app/src/components ---" && ls -la /app/src/components
-RUN echo "--- Contents of /app/src/components/ui ---" && ls -la /app/src/components/ui
-RUN echo "--- Content of /app/tsconfig.json ---" && cat /app/tsconfig.json
+# Diagnostic Steps: List files to verify they are correctly copied
+RUN echo "--- Listing /app contents ---" && ls -A .
+RUN echo "--- Listing /app/src contents ---" && ls -A src || echo "src directory not found"
+RUN echo "--- Listing /app/src/components contents ---" && ls -A src/components || echo "src/components directory not found"
+RUN echo "--- Listing /app/src/components/ui contents ---" && ls -A src/components/ui || echo "src/components/ui directory not found"
+RUN echo "--- Content of /app/tsconfig.json ---" && cat tsconfig.json || echo "tsconfig.json not found"
 
 # Build the Next.js application
 # Ensure your Docker build environment has internet access, especially for 'next/font/google'.
@@ -41,37 +35,31 @@ RUN yarn build
 FROM node:20-alpine AS runner
 WORKDIR /app
 
+# Set NODE_ENV to production for the final running image
 ENV NODE_ENV=production
-# ENV NEXT_TELEMETRY_DISABLED=1 # Uncomment to disable Next.js telemetry
 
 # Create a non-root user and group
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Copy only necessary files from the installer stage
-# This includes the .next/standalone server and its dependencies
-COPY --from=installer /app/.next/standalone ./
-
-# Copy public assets
-COPY --from=installer /app/public ./public
-
-# Copy static build output from .next/static
-COPY --from=installer /app/.next/static ./.next/static
-
-# Change ownership of the app directory to the non-root user
-RUN chown -R nextjs:nodejs /app
+# Copy necessary files from the installer stage
+# Copy the standalone Next.js server output
+COPY --from=installer --chown=nextjs:nodejs /app/.next/standalone ./
+# Copy the public folder
+COPY --from=installer --chown=nextjs:nodejs /app/public ./public
+# Copy the .next/static folder (generated JS, CSS, etc.)
+COPY --from=installer --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 # Switch to the non-root user
 USER nextjs
 
-# Expose port 3000 (or the port your app runs on)
+# Expose port 3000 (default for Next.js)
 EXPOSE 3000
 
-# Set HOSTNAME and PORT environment variables
-# HOSTNAME 0.0.0.0 is important for Docker to listen on all interfaces
+# Set HOSTNAME and PORT environment variables for the Next.js server
 ENV HOSTNAME="0.0.0.0"
 ENV PORT=3000
 
-# Start the Next.js application
-# server.js is the entry point for 'standalone' output mode
+# Command to run the Next.js application
+# server.js is the entry point for a standalone Next.js app
 CMD ["node", "server.js"]

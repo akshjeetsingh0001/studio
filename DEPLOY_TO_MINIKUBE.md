@@ -1,5 +1,5 @@
 
-# Deploying Seera POS Application to Minikube (on an Ubuntu Server)
+# Deploying Seera POS Application to Minikube (on an Ubuntu Server with Docker Driver)
 
 This guide provides step-by-step instructions to deploy the Seera POS Next.js application to a local Minikube Kubernetes cluster running on your Ubuntu server with the Docker driver.
 
@@ -7,6 +7,7 @@ This guide provides step-by-step instructions to deploy the Seera POS Next.js ap
 
 *   **Ubuntu Server:** Your Ubuntu server where Minikube will run.
 *   **Docker Installation on Ubuntu:** Docker Engine must be installed and running on your Ubuntu server. Minikube will use Docker as its driver. If not installed, follow the [official Docker installation guide for Ubuntu](https://docs.docker.com/engine/install/ubuntu/).
+    *   **Network for Docker:** Ensure Docker containers on your Ubuntu server have internet access (e.g., can resolve and reach `fonts.googleapis.com`, `registry.yarnpkg.com`). Check DNS settings and firewall rules (e.g., `ufw`) on the Ubuntu host if builds fail with network errors.
 *   **Minikube Installation on Ubuntu:** Minikube must be installed on your Ubuntu server. If not installed, follow the [official Minikube documentation](https://minikube.sigs.k8s.io/docs/start/).
 *   **Minikube Running with Docker Driver:** Ensure Minikube is started, explicitly using the Docker driver if it's not the default on your system:
     ```bash
@@ -18,7 +19,7 @@ This guide provides step-by-step instructions to deploy the Seera POS Next.js ap
 ## Deployment Steps
 
 1.  **Navigate to Your Project Directory:**
-    Open your terminal on the Ubuntu server (or wherever you manage your project files) and change to the root directory of your Seera POS application.
+    Open your terminal on the Ubuntu server (or wherever you manage your project files) and change to the **root directory** of your Seera POS application (the directory containing `Dockerfile`, `package.json`, `src`, etc.).
     ```bash
     cd /path/to/your/seera-pos-app
     ```
@@ -36,6 +37,18 @@ This guide provides step-by-step instructions to deploy the Seera POS Next.js ap
         ```bash
         docker build -t seera-pos-app:latest -f Dockerfile .
         ```
+        *   **Troubleshooting Build Errors:**
+            *   **Module not found (e.g., `Can't resolve '@/components/...'`):**
+                *   Ensure you are running the `docker build` command from the **project root**.
+                *   Check if you have a `.dockerignore` file that might be excluding `tsconfig.json` or the `src` directory.
+                *   Verify `baseUrl: "."` and `"paths": { "@/*": ["./src/*"] }` are correctly set in `tsconfig.json`.
+                *   Examine the output of `ls` commands in the Docker build logs to see if files are present as expected.
+            *   **Network errors (e.g., `ETIMEDOUT`, `Failed to fetch font`):**
+                *   This indicates the Docker build environment on your Ubuntu server cannot access the internet or specific resources.
+                *   Check firewall settings on your Ubuntu server (`sudo ufw status`).
+                *   Verify Docker's DNS configuration (e.g., in `/etc/docker/daemon.json`).
+                *   If behind a proxy, configure Docker to use it.
+
     *   **(Alternative) Build and push to a registry:** If you prefer to use an external Docker registry (e.g., Docker Hub), you can build and push as usual:
         ```bash
         # docker build -t your-dockerhub-username/seera-pos-app:latest -f Dockerfile .
