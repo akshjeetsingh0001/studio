@@ -1,13 +1,20 @@
 
 # Deploying Seera POS Application to Minikube
 
-This guide provides step-by-step instructions to deploy the Seera POS Next.js application to a local Minikube Kubernetes cluster.
+This guide provides step-by-step instructions to deploy the Seera POS Next.js application to a local Minikube Kubernetes cluster. This guide is applicable whether Minikube is running on your local development machine (macOS, Windows, Linux desktop) or on an Ubuntu server.
 
 ## Prerequisites
 
 *   **Minikube:** Ensure Minikube is installed and running. Start it with `minikube start`.
-*   **Docker:** Docker Desktop or Docker Engine must be installed and running.
+*   **Docker:** Docker Desktop or Docker Engine must be installed and running. Minikube typically uses Docker as its driver.
 *   **kubectl:** The Kubernetes command-line tool, `kubectl`, must be installed and configured to communicate with your Minikube cluster. (Minikube usually sets this up for you).
+
+### Additional Prerequisites if Minikube is Hosted on an Ubuntu Server:
+
+*   **Docker Installation on Ubuntu:** If not already installed, you'll need to install Docker Engine on your Ubuntu server. You can follow the official Docker installation guide for Ubuntu.
+*   **Minikube Installation on Ubuntu:** Download and install Minikube on your Ubuntu server. The official Minikube documentation provides instructions.
+*   **Minikube Driver:** When starting Minikube on Ubuntu (especially a headless server), you might explicitly use the Docker driver: `minikube start --driver=docker`.
+*   **Sudo access:** You'll likely need `sudo` for installing Docker, Minikube, and potentially for running some Minikube commands or Docker commands if your user isn't in the `docker` group.
 
 ## Deployment Steps
 
@@ -21,7 +28,7 @@ This guide provides step-by-step instructions to deploy the Seera POS Next.js ap
     Ensure you have a `Dockerfile` in your project root (one has been provided).
 
     *   **Option A (Recommended for Minikube): Point Docker CLI to Minikube's Docker daemon.**
-        This method builds the image directly within Minikube's Docker environment, so you don't need to push it to an external registry.
+        This method builds the image directly within Minikube's Docker environment, so you don't need to push it to an external registry. This works whether Minikube is local or on your Ubuntu server.
         ```bash
         eval $(minikube -p minikube docker-env)
         ```
@@ -121,18 +128,23 @@ This guide provides step-by-step instructions to deploy the Seera POS Next.js ap
         This command will output a URL (e.g., `http://192.168.49.2:30007`).
 
     *   **Open the URL in your browser** to access your Seera POS application.
+        *   **If Minikube is on an Ubuntu Server (or any remote machine):** The IP address in the URL above is internal to Minikube.
+            *   To access from the Ubuntu server itself, this URL should work directly.
+            *   To access from your local machine (different from the Ubuntu server), you will need to use the **Ubuntu server's actual IP address** and the **NodePort** number (the port after the colon, e.g., `30007`). For example: `http://<UBUNTU_SERVER_IP>:30007`.
+            *   Ensure your Ubuntu server's firewall allows incoming connections on this NodePort.
+            *   Alternatively, run `minikube tunnel` in a separate terminal *on the Ubuntu server*. This might provide a different way to access the service, potentially via an external IP if your network setup allows.
 
 ## Updating the Application
 
 If you make changes to your application code:
 
-1.  **Re-build your Docker image** (Step 2). If using Minikube's Docker daemon, ensure you re-run `eval $(minikube -p minikube docker-env)` if you opened a new terminal.
-2.  Kubernetes will not automatically pull a new image if the tag is `latest` by default (`imagePullPolicy: IfNotPresent`). To force an update, you can either:
-    *   Delete the existing pods to make the deployment recreate them (which will pull the image if it's different and `imagePullPolicy` allows):
+1.  **Re-build your Docker image** (Step 2). If using Minikube's Docker daemon, ensure you re-run `eval $(minikube -p minikube docker-env)` if you opened a new terminal or if the environment variables are no longer set.
+2.  Kubernetes will not automatically pull a new image if the tag is `latest` and `imagePullPolicy` is `IfNotPresent` (the default for locally built images). To force an update, you can either:
+    *   Delete the existing pods to make the deployment recreate them (which will pull the image if it's different):
         ```bash
         kubectl delete pods -l app=seera-pos
         ```
-    *   Or, more robustly, update your image tag (e.g., `seera-pos-app:v1.1`), update `k8s/deployment.yaml`, and re-apply:
+    *   Or, more robustly, update your image tag (e.g., `seera-pos-app:v1.1`), update `k8s/deployment.yaml` with the new tag, and re-apply:
         ```bash
         kubectl apply -f k8s/deployment.yaml
         ```
@@ -161,4 +173,3 @@ eval $(minikube docker-env -u)
 ```
 
 This completes the guide for deploying your Seera POS application to Minikube!
-
