@@ -1,67 +1,63 @@
-
-# Stage 1: Installer - Install dependencies and build the application
+# Stage 1: Installer - Build the Next.js application
 FROM node:20-alpine AS installer
 WORKDIR /app
 
-# Set NODE_ENV to production for installing only production dependencies
-ENV NODE_ENV production
+# Set NODE_ENV to production for this stage to ensure only prod dependencies are installed (if applicable to 'yarn install')
+# And also for the 'next build' command to run in production mode.
+ENV NODE_ENV=production
 
 # Copy package.json and lock file
+# This order helps leverage Docker's layer caching.
 COPY package.json yarn.lock* pnpm-lock.yaml* ./
-# If you're using npm, uncomment the line below and comment out the yarn/pnpm lines
-# COPY package-lock.json ./
 
 # Install dependencies
-# If using npm:
+# Choose the command that matches your package manager
 # RUN npm ci
-# If using yarn:
 RUN yarn install --frozen-lockfile
-# If using pnpm:
-# RUN apk add --no-cache libc6-compat
-# RUN corepack enable
 # RUN pnpm install --frozen-lockfile
 
-# Copy the rest of the application code
+# Copy the rest of the application source code
 COPY . .
 
 # Build the Next.js application
 # The --no-lint and --no-typecheck flags are optional, remove if you want these checks during build
+# Ensure your Docker build environment has internet access, especially for 'next/font/google'.
+# If you encounter timeouts (ETIMEDOUT) here, it's likely a network issue from within Docker.
 RUN yarn build
 
 # Stage 2: Runner - Create the final production image
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
-# Uncomment the next line if you need to change the timezone, e.g., for Asia/Kolkata
-# ENV TZ Asia/Kolkata
+ENV NODE_ENV=production
 
 # Create a non-root user and group
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
 # Copy the standalone output from the installer stage
+# This includes the server.js, .next/standalone/node_modules, and other necessary files.
 COPY --from=installer /app/.next/standalone ./
 
-# Copy the public folder
+# Copy the public folder from the installer stage
 COPY --from=installer /app/public ./public
 
-# Copy the static assets (if any are served from _next/static directly and not part of standalone)
-# This is generally needed for Next.js 13+ App Router static assets
+# Copy the .next/static folder from the installer stage (contains CSS, JS chunks, etc.)
 COPY --from=installer /app/.next/static ./.next/static
 
-# Set ownership to the non-root user
+# Set correct ownership for the app directory
 RUN chown -R nextjs:nodejs /app
 
 # Switch to the non-root user
 USER nextjs
 
+# Expose the port the app runs on
 EXPOSE 3000
 
-# Set the HOSTNAME to 0.0.0.0 to accept connections from any IP address
-ENV HOSTNAME "0.0.0.0"
-ENV PORT 3000
+# Set HOSTNAME and PORT for Next.js. 
+# HOSTNAME 0.0.0.0 is important for Docker to expose the app correctly.
+ENV HOSTNAME="0.0.0.0"
+ENV PORT=3000
 
-# Command to run the Next.js server
-# The server.js file is created by the standalone output
+# Command to run the
 CMD ["node", "server.js"]
