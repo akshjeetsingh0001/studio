@@ -17,17 +17,15 @@ This guide provides step-by-step instructions to deploy the Seera POS Next.js ap
 *   **Sudo access:** You'll likely need `sudo` for installing Docker, Minikube, and potentially for running some Minikube or Docker commands if your user isn't in the `docker` group.
 *   **Project Structure:**
     *   Ensure your `tsconfig.json` has `compilerOptions.baseUrl = "."` and `compilerOptions.paths = {"@/*": ["./src/*"]}` for alias resolution.
-    *   Your `next.config.ts` should have `output: 'standalone'` and may include Webpack alias configurations as a fallback.
-    *   **Public Directory:** Next.js applications often use a `public` directory at the project root for static assets (e.g., images, favicon.ico).
-        *   If your project has such assets, ensure this `public` directory exists and is **not** excluded by a `.dockerignore` file.
-        *   The provided `Dockerfile` creates an empty `public` directory in the final image. If you need assets from your local `public` directory to be in the image, you would need to adjust the Dockerfile or ensure the `COPY . .` command correctly includes them in the `installer` stage, and then re-evaluate the `COPY --from=installer /app/public ./public` command in the `runner` stage (which is currently removed to bypass a common error).
+    *   Your `next.config.ts` should have `output: 'standalone'` and includes Webpack alias configurations.
+    *   **Public Directory:** If your Next.js application uses a `public` directory for static assets, ensure it exists in your project root. The `Dockerfile` is set up to create an empty `public` directory in the final image if one isn't copied from your source. If you *have* a local `public` directory with assets, ensure it's not excluded by `.dockerignore`.
 
 ## Deployment Steps
 
 1.  **Navigate to Your Project Directory:**
     Open your terminal on the Ubuntu server (or wherever you manage your project files) and change to the **root directory** of your Seera POS application (the directory containing `Dockerfile`, `package.json`, `src`, etc.).
     ```bash
-    cd /path/to/your/seera-pos-app
+    cd /path/to/your/seera-pos-app # e.g., cd ~/studio
     ```
 
 2.  **Build Your Docker Image into Minikube's Docker Daemon:**
@@ -46,8 +44,8 @@ This guide provides step-by-step instructions to deploy the Seera POS Next.js ap
         *   **Troubleshooting Build Errors:**
             *   **Module not found (e.g., `Can't resolve '@/components/...'`):**
                 *   Ensure you are running the `docker build` command from the **project root**.
-                *   Check if you have a `.dockerignore` file that might be excluding `tsconfig.json` or the `src` directory. The `next.config.ts` should explicitly configure Webpack aliases, which helps.
-                *   Verify `baseUrl: "."` and `"paths": { "@/*": ["./src/*"] }` are correctly set in `tsconfig.json`. The `Dockerfile` includes diagnostic `ls` and `cat` commands; examine their output to see if files are present as expected in `/app` during the build.
+                *   Check if you have a `.dockerignore` file that might be excluding `tsconfig.json` or the `src` directory.
+                *   Verify `baseUrl: "."` and `"paths": { "@/*": ["./src/*"] }` are correctly set in `tsconfig.json` and that `next.config.ts` explicitly configures Webpack alias configurations. Examine the diagnostic `ls` and `cat` command outputs in the Docker build log to see if files are present as expected in `/app` during the build.
             *   **Network errors during `yarn install` (e.g., `ETIMEDOUT` to `registry.yarnpkg.com`):**
                 *   This indicates the Docker build environment on your Ubuntu server cannot access the internet or specific resources.
                 *   Check firewall settings on your Ubuntu server (`sudo ufw status`).
@@ -62,14 +60,14 @@ This guide provides step-by-step instructions to deploy the Seera POS Next.js ap
         If you choose this alternative, you **MUST** update the `image:` field in `k8s/deployment.yaml` from `seera-pos-app:latest` to `your-dockerhub-username/seera-pos-app:latest`.
 
 3.  **Prepare and Apply Kubernetes Secrets (`k8s/secret.yaml`):**
-    Secrets are used to store sensitive information like API keys and credentials.
+    Secrets are used to store sensitive information like API keys and credentials. This is a **critical step** to resolve errors like `couldn't find key AI_PROVIDER_API_KEY in Secret`.
 
     *   **Encode your `AI_PROVIDER_API_KEY`:**
         Run the following command in your terminal, replacing `YOUR_ACTUAL_AI_PROVIDER_KEY` with your real key:
         ```bash
         echo -n "YOUR_ACTUAL_AI_PROVIDER_KEY" | base64
         ```
-        Copy the resulting base64 encoded string.
+        Copy the resulting base64 encoded string. It will look something like `WU9VUl9BQ1RVQUxfQUlfUFJPVklERVJfS0VZ`.
 
     *   **Encode your Google Service Account JSON credentials:**
         Your Google Service Account JSON key file needs to be base64 encoded. It's best if the JSON content is on a single line before encoding. You can minify it using `jq` or ensure it's a single line manually.
@@ -84,12 +82,34 @@ This guide provides step-by-step instructions to deploy the Seera POS Next.js ap
 
     *   **Edit `k8s/secret.yaml`:**
         Open the `k8s/secret.yaml` file.
-        *   Replace `YOUR_BASE64_ENCODED_AI_KEY_HERE` with the base64 encoded string of your AI Provider Key.
-        *   Replace `YOUR_BASE64_ENCODED_GOOGLE_CREDS_HERE` with the base64 encoded string of your Google Service Account JSON credentials.
+        *   Find the line `AI_PROVIDER_API_KEY: YOUR_BASE64_ENCODED_AI_KEY_HERE`.
+        *   **Replace `YOUR_BASE64_ENCODED_AI_KEY_HERE`** with the base64 encoded string of your AI Provider Key that you copied.
+        *   Find the line `GOOGLE_SERVICE_ACCOUNT_CREDENTIALS: YOUR_BASE64_ENCODED_GOOGLE_CREDS_HERE`.
+        *   **Replace `YOUR_BASE64_ENCODED_GOOGLE_CREDS_HERE`** with the base64 encoded string of your Google Service Account JSON credentials.
+
+        **Example of correctly edited `k8s/secret.yaml` data section:**
+        ```yaml
+        data:
+          AI_PROVIDER_API_KEY: WU9VUl9BQ1RVQUxfQUlfUFJPVklERVJfS0VZ # This is an EXAMPLE, use your actual encoded key
+          GOOGLE_SERVICE_ACCOUNT_CREDENTIALS: e0tGSECRETCONTENTtfQo= # This is an EXAMPLE, use your actual encoded creds
+        ```
+        **Ensure the keys (`AI_PROVIDER_API_KEY`, `GOOGLE_SERVICE_ACCOUNT_CREDENTIALS`) are exactly as written in the file and are not commented out.**
 
     *   **Apply the secret to your Minikube cluster:**
         ```bash
         kubectl apply -f k8s/secret.yaml
+        ```
+
+    *   **Verify the Secret (IMPORTANT for troubleshooting):**
+        To ensure the secret was applied correctly and contains the necessary keys, run:
+        ```bash
+        kubectl get secret seera-pos-secrets -o yaml
+        ```
+        In the output, under the `data:` section, you should see entries for `AI_PROVIDER_API_KEY` and `GOOGLE_SERVICE_ACCOUNT_CREDENTIALS`. The values will be base64 encoded. If `AI_PROVIDER_API_KEY` is missing from this output, the secret was not applied correctly with that key.
+        You can decode a specific key from the secret to verify its value:
+        ```bash
+        # Replace <base64_encoded_value_from_above_command> with the actual encoded value
+        # kubectl get secret seera-pos-secrets -o jsonpath='{.data.AI_PROVIDER_API_KEY}' | base64 --decode
         ```
 
 4.  **Update and Apply Kubernetes Deployment (`k8s/deployment.yaml`):**
@@ -104,6 +124,7 @@ This guide provides step-by-step instructions to deploy the Seera POS Next.js ap
         ```bash
         kubectl apply -f k8s/deployment.yaml
         ```
+        *(If your pod was in an error state due to the missing secret, Kubernetes might try to restart it automatically. If not, you might need to delete the failing pod to force the deployment to recreate it with the new secret: `kubectl delete pod <pod-name>`)*
 
 5.  **Apply Kubernetes Service (`k8s/service.yaml`):**
     The service manifest exposes your application so you can access it.
@@ -125,6 +146,7 @@ This guide provides step-by-step instructions to deploy the Seera POS Next.js ap
         kubectl get pods
         ```
         You should see a pod named like `seera-pos-deployment-...` with a `STATUS` of `Running`.
+        If it's in `Error` or `CrashLoopBackOff`, check the logs.
 
     *   **View pod logs (if troubleshooting):**
         If a pod is not `Running` or you encounter issues, check its logs. First, get the full pod name using `kubectl get pods`, then:
@@ -192,3 +214,6 @@ eval $(minikube docker-env -u)
 ```
 
 This completes the guide for deploying your Seera POS application to Minikube running on an Ubuntu server with the Docker driver!
+Make sure you have a `public` directory in your project root if your application expects it (e.g., for `favicon.ico` or other static assets). If not, and it's intended to be empty, the Dockerfile will create an empty one.
+Check your `.dockerignore` file to ensure it's not accidentally excluding the `public` directory or other necessary files.
+Ensure `next.config.ts` has `output: 'standalone'`.
