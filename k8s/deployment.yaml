@@ -1,0 +1,65 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: seera-pos-deployment
+  labels:
+    app: seera-pos
+spec:
+  replicas: 1 # Start with 1 replica, can be scaled later
+  selector:
+    matchLabels:
+      app: seera-pos
+  template:
+    metadata:
+      labels:
+        app: seera-pos
+    spec:
+      containers:
+      - name: seera-pos-app
+        # IMPORTANT: Replace 'your-dockerhub-username/seera-pos:latest'
+        # with your actual Docker image name and tag if you're using a registry.
+        # If you build locally and load into Minikube's Docker daemon, you can use a simpler name like 'seera-pos-app:latest'.
+        image: seera-pos-app:latest
+        imagePullPolicy: IfNotPresent # or Always if you update the image frequently on a registry
+        ports:
+        - containerPort: 3000 # Port your Next.js app runs on inside the container
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3000"
+        - name: AI_PROVIDER_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: seera-pos-secrets
+              key: AI_PROVIDER_API_KEY
+        - name: GOOGLE_SHEET_ID
+          # You can put your Google Sheet ID directly here or use a ConfigMap
+          value: "YOUR_GOOGLE_SHEET_ID_HERE" # <<< REPLACE THIS
+        - name: GOOGLE_SERVICE_ACCOUNT_CREDENTIALS
+          valueFrom:
+            secretKeyRef:
+              name: seera-pos-secrets
+              key: GOOGLE_SERVICE_ACCOUNT_CREDENTIALS
+        livenessProbe:
+          httpGet:
+            path: / # A simple path to check if the app is alive
+            port: 3000
+          initialDelaySeconds: 30 # Give the app time to start
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: / # A simple path to check if the app is ready to serve traffic
+            port: 3000
+          initialDelaySeconds: 15 # Shorter delay for readiness
+          periodSeconds: 10
+          timeoutSeconds: 5
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m" # 0.25 CPU core
+          limits:
+            memory: "512Mi"
+            cpu: "500m"  # 0.5 CPU core
