@@ -10,6 +10,12 @@ export default {
   ],
   theme: {
   	extend: {
+      // Removed custom font family definitions that relied on CSS variables
+      // fontFamily: {
+      //   sans: ['var(--font-geist-sans)'],
+      //   mono: ['var(--font-geist-mono)'],
+      //   brand: ['var(--font-playfair-display)'], // Example if you had this
+      // },
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',

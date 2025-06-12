@@ -1,26 +1,12 @@
 
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono, Playfair_Display } from 'next/font/google';
+// Removed next/font imports
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/ThemeProvider';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
-});
-
-const playfairDisplay = Playfair_Display({
-  subsets: ['latin'],
-  variable: '--font-playfair-display',
-  display: 'swap', // Ensures text is visible while font loads
-});
+// Removed font configurations (geistSans, geistMono, playfairDisplay)
 
 export const metadata: Metadata = {
   title: 'Seera',
@@ -34,7 +20,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} ${playfairDisplay.variable} antialiased`}>
+      {/* Removed font variable classes from body */}
+      <body className="antialiased">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
