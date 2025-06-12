@@ -18,6 +18,7 @@ This guide provides step-by-step instructions to deploy the Seera POS Next.js ap
     ```
 
 2.  **Build Your Docker Image:**
+    Ensure you have a `Dockerfile` in your project root (one has been provided).
 
     *   **Option A (Recommended for Minikube): Point Docker CLI to Minikube's Docker daemon.**
         This method builds the image directly within Minikube's Docker environment, so you don't need to push it to an external registry.
@@ -25,15 +26,15 @@ This guide provides step-by-step instructions to deploy the Seera POS Next.js ap
         eval $(minikube -p minikube docker-env)
         ```
         *   To revert this and point Docker CLI back to your host's Docker daemon (if needed later), you can use: `eval $(minikube -p minikube docker-env -u)`
-        *   Then, build the image:
+        *   Then, build the image using the `Dockerfile`:
         ```bash
-        docker build -t seera-pos-app:latest .
+        docker build -t seera-pos-app:latest -f Dockerfile .
         ```
 
     *   **Option B: Build and push to a public/private Docker registry (e.g., Docker Hub).**
         If you choose this option, you'll need to replace `your-dockerhub-username` with your actual Docker Hub username or the path to your private registry.
         ```bash
-        docker build -t your-dockerhub-username/seera-pos-app:latest .
+        docker build -t your-dockerhub-username/seera-pos-app:latest -f Dockerfile .
         docker push your-dockerhub-username/seera-pos-app:latest
         ```
         **Important:** If you use Option B, you **MUST** update the `image:` field in `k8s/deployment.yaml` from `seera-pos-app:latest` to `your-dockerhub-username/seera-pos-app:latest`.
@@ -160,3 +161,4 @@ eval $(minikube docker-env -u)
 ```
 
 This completes the guide for deploying your Seera POS application to Minikube!
+
