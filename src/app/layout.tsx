@@ -1,12 +1,10 @@
 
 import type { Metadata } from 'next';
-// Removed next/font imports
+// Ensure no next/font imports are present
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
 import { ThemeProvider } from '@/components/ThemeProvider';
-
-// Removed font configurations (geistSans, geistMono, playfairDisplay)
 
 export const metadata: Metadata = {
   title: 'Seera',
@@ -20,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      {/* Removed font variable classes from body */}
+      {/* Body class should not reference specific font variables like --font-geist-sans */}
       <body className="antialiased">
         <ThemeProvider
           attribute="class"
