@@ -15,6 +15,12 @@ This guide provides step-by-step instructions to deploy the Seera POS Next.js ap
     ```
 *   **kubectl:** The Kubernetes command-line tool, `kubectl`, must be installed and configured to communicate with your Minikube cluster. (Minikube usually sets this up for you).
 *   **Sudo access:** You'll likely need `sudo` for installing Docker, Minikube, and potentially for running some Minikube or Docker commands if your user isn't in the `docker` group.
+*   **Project Structure:**
+    *   Ensure your `tsconfig.json` has `compilerOptions.baseUrl = "."` and `compilerOptions.paths = {"@/*": ["./src/*"]}` for alias resolution.
+    *   Your `next.config.ts` should have `output: 'standalone'` and may include Webpack alias configurations as a fallback.
+    *   **Public Directory:** Next.js applications often use a `public` directory at the project root for static assets (e.g., images, favicon.ico).
+        *   If your project has such assets, ensure this `public` directory exists and is **not** excluded by a `.dockerignore` file.
+        *   The provided `Dockerfile` creates an empty `public` directory in the final image. If you need assets from your local `public` directory to be in the image, you would need to adjust the Dockerfile or ensure the `COPY . .` command correctly includes them in the `installer` stage, and then re-evaluate the `COPY --from=installer /app/public ./public` command in the `runner` stage (which is currently removed to bypass a common error).
 
 ## Deployment Steps
 
@@ -40,8 +46,8 @@ This guide provides step-by-step instructions to deploy the Seera POS Next.js ap
         *   **Troubleshooting Build Errors:**
             *   **Module not found (e.g., `Can't resolve '@/components/...'`):**
                 *   Ensure you are running the `docker build` command from the **project root**.
-                *   Check if you have a `.dockerignore` file that might be excluding `tsconfig.json` or the `src` directory.
-                *   Verify `baseUrl: "."` and `"paths": { "@/*": ["./src/*"] }` are correctly set in `tsconfig.json`. The `Dockerfile` includes diagnostic `ls` commands; examine their output to see if files are present as expected in `/app` during the build.
+                *   Check if you have a `.dockerignore` file that might be excluding `tsconfig.json` or the `src` directory. The `next.config.ts` should explicitly configure Webpack aliases, which helps.
+                *   Verify `baseUrl: "."` and `"paths": { "@/*": ["./src/*"] }` are correctly set in `tsconfig.json`. The `Dockerfile` includes diagnostic `ls` and `cat` commands; examine their output to see if files are present as expected in `/app` during the build.
             *   **Network errors during `yarn install` (e.g., `ETIMEDOUT` to `registry.yarnpkg.com`):**
                 *   This indicates the Docker build environment on your Ubuntu server cannot access the internet or specific resources.
                 *   Check firewall settings on your Ubuntu server (`sudo ufw status`).
