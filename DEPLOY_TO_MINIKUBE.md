@@ -7,7 +7,7 @@ This guide provides step-by-step instructions to deploy the Seera POS Next.js ap
 
 *   **Ubuntu Server:** Your Ubuntu server where Minikube will run.
 *   **Docker Installation on Ubuntu:** Docker Engine must be installed and running on your Ubuntu server. Minikube will use Docker as its driver. If not installed, follow the [official Docker installation guide for Ubuntu](https://docs.docker.com/engine/install/ubuntu/).
-    *   **Network for Docker:** Ensure Docker containers on your Ubuntu server have internet access (e.g., can resolve and reach `fonts.googleapis.com`, `registry.yarnpkg.com`). Check DNS settings and firewall rules (e.g., `ufw`) on the Ubuntu host if builds fail with network errors.
+    *   **Network for Docker:** Ensure Docker containers on your Ubuntu server have internet access (e.g., can resolve and reach `registry.yarnpkg.com` for package installation). Check DNS settings and firewall rules (e.g., `ufw`) on the Ubuntu host if builds fail with network errors during `yarn install`.
 *   **Minikube Installation on Ubuntu:** Minikube must be installed on your Ubuntu server. If not installed, follow the [official Minikube documentation](https://minikube.sigs.k8s.io/docs/start/).
 *   **Minikube Running with Docker Driver:** Ensure Minikube is started, explicitly using the Docker driver if it's not the default on your system:
     ```bash
@@ -41,9 +41,8 @@ This guide provides step-by-step instructions to deploy the Seera POS Next.js ap
             *   **Module not found (e.g., `Can't resolve '@/components/...'`):**
                 *   Ensure you are running the `docker build` command from the **project root**.
                 *   Check if you have a `.dockerignore` file that might be excluding `tsconfig.json` or the `src` directory.
-                *   Verify `baseUrl: "."` and `"paths": { "@/*": ["./src/*"] }` are correctly set in `tsconfig.json`.
-                *   Examine the output of `ls` commands in the Docker build logs to see if files are present as expected.
-            *   **Network errors (e.g., `ETIMEDOUT`, `Failed to fetch font`):**
+                *   Verify `baseUrl: "."` and `"paths": { "@/*": ["./src/*"] }` are correctly set in `tsconfig.json`. The `Dockerfile` includes diagnostic `ls` commands; examine their output to see if files are present as expected in `/app` during the build.
+            *   **Network errors during `yarn install` (e.g., `ETIMEDOUT` to `registry.yarnpkg.com`):**
                 *   This indicates the Docker build environment on your Ubuntu server cannot access the internet or specific resources.
                 *   Check firewall settings on your Ubuntu server (`sudo ufw status`).
                 *   Verify Docker's DNS configuration (e.g., in `/etc/docker/daemon.json`).
@@ -69,10 +68,10 @@ This guide provides step-by-step instructions to deploy the Seera POS Next.js ap
     *   **Encode your Google Service Account JSON credentials:**
         Your Google Service Account JSON key file needs to be base64 encoded. It's best if the JSON content is on a single line before encoding. You can minify it using `jq` or ensure it's a single line manually.
         ```bash
-        # Example using jq to minify and then base64 encode:
+        # Example using jq to minify and then base64 encode (recommended):
         # cat /path/to/your/service-account-file.json | jq -c . | base64 -w 0
         # OR, if already minified and on a single line:
-        cat /path/to/your/service-account-file.json | base64 -w 0
+        # cat /path/to/your/service-account-file.json | base64 -w 0
         ```
         *(Note: The `-w 0` flag for GNU `base64` prevents line wrapping. For macOS `base64`, it's just `base64` without `-w 0`.)*
         Copy the resulting base64 encoded string.
